@@ -1,0 +1,54 @@
+{# ═══════════════════════════════════════════════════════════
+   login.html — Página de Login
+
+   COMO FUNCIONA O SISTEMA DE TEMPLATES?
+   - Este arquivo "herda" o base.html com {% extends %}
+   - O base.html define blocos vazios com {% block nome %}{% endblock %}
+   - Este arquivo "preenche" esses blocos com o conteúdo específico desta página
+   - IMPORTANTE: os nomes dos blocos aqui DEVEM ser iguais aos do base.html!
+     base.html usa: {% block titulo %} e {% block conteudo %}
+═══════════════════════════════════════════════════════════ #}
+{% extends "base.html" %}
+
+{# Bloco do título da aba do navegador #}
+{% block titulo %}Login | Troqui{% endblock %}
+
+{# Bloco do conteúdo principal da página #}
+{% block conteudo %}
+<div style="max-width: 400px; margin: 40px auto; background: var(--bg-surface); padding: 30px; border-radius: var(--r-lg); border: 1px solid var(--border);">
+
+    <h2 style="text-align: center; color: var(--gold-bright); margin-bottom: 20px;">
+        🐘 Acessar Conta
+    </h2>
+
+    {#
+        FORMULÁRIO HTML
+        method="POST" → os dados são enviados para o servidor ao clicar em Enviar
+        O Flask recebe esses dados em app.py via request.form['email'] e request.form['senha']
+    #}
+    <form method="POST">
+
+        <div class="form-group">
+            <label class="form-label">E-mail:</label>
+            {# name="email" → este é o nome pelo qual o Flask busca este campo #}
+            <input type="email" name="email" class="form-input" required placeholder="seu@email.com">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Senha:</label>
+            {# type="password" → o navegador oculta o que é digitado #}
+            <input type="password" name="senha" class="form-input" required placeholder="Sua senha">
+        </div>
+
+        <button type="submit" class="btn-salvar" style="width: 100%; margin-top: 10px;">
+            Entrar
+        </button>
+    </form>
+
+    <p style="text-align: center; margin-top: 20px; font-size: 0.9rem; color: var(--text-muted);">
+        Ainda não tem conta?
+        {# url_for('registro') gera automaticamente a URL da rota 'registro' do app.py #}
+        <a href="{{ url_for('registro') }}" style="color: var(--amber-bright);">Criar conta</a>
+    </p>
+</div>
+{% endblock %}

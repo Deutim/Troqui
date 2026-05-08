@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block titulo %}Troqui{% endblock %}</title>
+    <meta name="description" content="Sistema de controle financeiro pessoal — 100% Python com Flask">
+    <!--
+        JINJA2 — TEMPLATE ENGINE DO FLASK
+        
+        Jinja2 permite colocar lógica Python dentro do HTML.
+        Sintaxe:
+          `{{ variavel }}`        → Exibe o valor de uma variável Python
+          `{ % if condição % }`   → Condicional (igual ao Python)
+          `{ % for item in lista % }` → Loop (igual ao Python)
+          `{ % block nome % }`    → Define um bloco que as páginas filhas podem sobrescrever
+          `{ % extends 'base.html' % }` → Herda este template base
+        
+        Este arquivo (base.html) define a ESTRUTURA COMUM a todas as páginas.
+        Cada página específica "herda" este template e só preenche o conteúdo.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    
+    <!-- Configurações PWA (Progressive Web App) -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#000000">
+    
+    <!-- Configurações exclusivas para Safari (iOS) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Troqui">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.png') }}">
+</head>
+<body>
+<div id="app">
+
+    <!-- Efeitos de fundo decorativos -->
+    <div class="bg-grid"></div>
+    <div class="bg-glow-1"></div>
+    <div class="bg-glow-2"></div>
+    
+    {% if current_user.is_authenticated %}
+    <!-- BARRA SUPERIOR (LOGIN E BUSCA) -->
+    <header class="app-header">
+        
+        <!-- Saudação -->
+        <div class="header-saudacao">
+            Olá, {{ current_user.nome }} 👋
+        </div>
+        
+        <!-- Barra de Busca -->
+        <form action="{{ url_for('busca') }}" method="GET" class="header-busca">
+            <input type="text" name="q" placeholder="Buscar (ex: Mãe)" required class="form-input" style="margin: 0; padding: 8px 12px; height: auto;">
+            <button type="submit" class="btn-salvar" style="margin: 0; padding: 8px 15px; height: auto; min-width: auto; cursor: pointer;">🔍</button>
+        </form>
+
+        <!-- Botão Sair -->
+        <div class="header-sair">
+            <a href="{{ url_for('logout') }}" class="btn-sair">
+                Sair [x]
+            </a>
+        </div>
+    </header>
+    {% endif %}
+
+    <!-- Mensagens Flash (feedback para o usuário) -->
+    <!-- 
+        get_flashed_messages() retorna as mensagens criadas por flash() no Python.
+        'with_categories=true' inclui a categoria ('sucesso', 'erro', etc.)
+    -->
+    {% with mensagens = get_flashed_messages(with_categories=true) %}
+        {% if mensagens %}
+            {% for categoria, mensagem in mensagens %}
+                <div class="toast show toast-{{ categoria }}">{{ mensagem }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- CONTEÚDO DA PÁGINA -->
+    <!-- Cada página filha preenche este bloco com seu conteúdo específico -->
+    <div class="view active">
+        {% block conteudo %}{% endblock %}
+    </div>
+
+</div>
+
+<!-- JavaScript mínimo — só para esconder as mensagens flash e animações -->
+<script>
+    // Esconde as mensagens flash após 3 segundos
+    document.querySelectorAll('.toast.show').forEach(t => {
+        setTimeout(() => t.classList.remove('show'), 3000);
+    });
+</script>
+    <!-- JS para seleção em lote -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const checkboxes = document.querySelectorAll('.chk-lote');
+            const barra = document.getElementById('barra-lote');
+            const txtQtd = document.getElementById('lote-qtd');
+            const txtTotal = document.getElementById('lote-total');
+
+            if (!barra) return; // Se a tela não tem a barra, ignora.
+
+            checkboxes.forEach(chk => {
+                chk.addEventListener('change', atualizarLote);
+            });
+
+            function atualizarLote() {
+                let qtd = 0;
+                let total = 0.0;
+                
+                checkboxes.forEach(chk => {
+                    if(chk.checked) {
+                        qtd++;
+                        total += parseFloat(chk.dataset.valor);
+                    }
+                });
+
+                if(qtd > 0) {
+                    barra.classList.add('show');
+                    txtQtd.textContent = qtd;
+                    txtTotal.textContent = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(total);
+                } else {
+                    barra.classList.remove('show');
+                }
+            }
+        });
+    </script>
+
+    <!-- Registro do Service Worker para transformar em PWA -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('Gordi avisa: PWA ativado com sucesso!', reg.scope))
+                .catch(err => console.error('Erro no PWA:', err));
+            });
+        }
+    </script>
+</body>
+</html>

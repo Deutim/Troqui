@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block titulo %}Novo Lançamento{% endblock %}
+
+{% block conteudo %}
+<div class="fc-page">
+    <div class="page-header">
+        <a href="{{ url_for('dashboard') }}" class="btn-voltar">← Voltar</a>
+        <h2 class="page-titulo">Novo Lançamento</h2>
+    </div>
+    <p class="page-subtitulo">Selecione o tipo de lançamento:</p>
+    <div class="tipo-grid">
+        <a href="{{ url_for('lancamento_receita') }}" class="tipo-btn tipo-receita">
+            <span class="tipo-icon">📈</span>
+            <span class="tipo-nome">Receita</span>
+            <span class="tipo-desc">Entrada de dinheiro<br>Salário, dividendos, comissão...</span>
+        </a>
+        <a href="{{ url_for('lancamento_despesa') }}" class="tipo-btn tipo-despesa">
+            <span class="tipo-icon">📉</span>
+            <span class="tipo-nome">Despesa</span>
+            <span class="tipo-desc">Saída de dinheiro<br>Contas, compras, dívidas...</span>
+        </a>
+    </div>
+</div>
+{% endblock %}

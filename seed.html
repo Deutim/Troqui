@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Importador SQL</title>
+<style>body{background:#111;color:#eee;font-family:monospace;padding:30px;font-size:14px}h1{color:#ff8c00}.ok{color:#0c6}.info{color:#ff8c00}.warn{color:#f44}</style>
+</head><body>
+<h1>Importando dividas no banco SQL...</h1>
+<pre id="log"></pre>
+<script>
+const log = document.getElementById('log');
+function msg(t,c){log.innerHTML+=`<span class="${c||''}">${t}</span>\n`;}
+
+const dividas = [
+    {desc:'Smart Fit',valor:329.90,mes:'2026-04',data:'2026-04-23'},
+    {desc:'Blue Fit',valor:299.80,mes:'2026-04',data:'2026-04-23'},
+    {desc:'BB Cheque Especial',valor:1235.02,mes:'2026-04',data:'2026-04-23'},
+    {desc:'BB Cartao de credito',valor:2160.22,mes:'2026-04',data:'2026-04-23'},
+    {desc:'Banco Inter',valor:198.87,mes:'2026-04',data:'2026-04-23'},
+    {desc:'Banco Itau',valor:1108.63,mes:'2026-04',data:'2026-04-23'},
+    {desc:'Financiamento Moto Yamaha (Parc. 1/5)',valor:835.01,mes:'2026-04',data:'2026-04-23'},
+    {desc:'Financiamento Moto Yamaha (Parc. 2/5)',valor:835.01,mes:'2026-05',data:'2026-04-23'},
+    {desc:'Financiamento Moto Yamaha (Parc. 3/5)',valor:835.01,mes:'2026-06',data:'2026-04-23'},
+    {desc:'Financiamento Moto Yamaha (Parc. 4/5)',valor:835.01,mes:'2026-07',data:'2026-04-23'},
+    {desc:'Financiamento Moto Yamaha (Parc. 5/5)',valor:834.96,mes:'2026-08',data:'2026-04-23'},
+    {desc:'Financiamento AP',valor:644.96,mes:'2026-02',data:'2026-02-25'},
+    {desc:'Financiamento AP',valor:636.56,mes:'2026-03',data:'2026-03-25'},
+    {desc:'Financiamento AP',valor:621.38,mes:'2026-04',data:'2026-04-25'},
+    {desc:'Condominio AP',valor:320.09,mes:'2026-03',data:'2026-03-10'},
+    {desc:'Condominio AP',valor:313.89,mes:'2026-04',data:'2026-04-10'},
+    {desc:'Energia AP',valor:31.61,mes:'2026-04',data:'2026-04-01'},
+    {desc:'Multas Moto',valor:336.46,mes:'2026-04',data:'2026-04-23'},
+    {desc:'Licenciamento Moto',valor:119.23,mes:'2026-04',data:'2026-04-23'},
+    {desc:'IPVA Moto',valor:562.35,mes:'2026-04',data:'2026-04-23'},
+    {desc:'Fatura C6',valor:196.30,mes:'2026-04',data:'2026-04-27'},
+    {desc:'Multa Celta Rayene',valor:293.47,mes:'2026-04',data:'2026-04-23'},
+    {desc:'Compras Pascoa VR Rayene',valor:380.00,mes:'2026-04',data:'2026-04-23'},
+    {desc:'Aprox. Cartoes Rayene',valor:6500.00,mes:'2026-04',data:'2026-04-23'},
+    {desc:'Marcia Gerente',valor:40.00,mes:'2026-04',data:'2026-04-23'},
+    {desc:'Emprestimo Banco Mae',valor:380.00,mes:'2026-04',data:'2026-04-10'},
+    {desc:'Emprestimo Banco Mae',valor:380.00,mes:'2026-05',data:'2026-05-10'},
+    {desc:'Uber Cartao Mae',valor:48.94,mes:'2026-04',data:'2026-04-23'},
+    {desc:'Uber Cartao Mae',valor:26.43,mes:'2026-04',data:'2026-04-23'},
+    {desc:'Uber Cartao Mae',valor:15.93,mes:'2026-04',data:'2026-04-23'},
+    {desc:'Uber Cartao Mae',valor:74.92,mes:'2026-04',data:'2026-04-23'},
+    {desc:'Uber Cartao Mae',valor:39.96,mes:'2026-04',data:'2026-04-23'},
+    {desc:'Uber Cartao Mae',valor:13.96,mes:'2026-04',data:'2026-04-23'},
+    {desc:'Uber Cartao Mae',valor:22.97,mes:'2026-04',data:'2026-04-23'},
+    {desc:'Uber Cartao Mae',valor:11.95,mes:'2026-04',data:'2026-04-23'},
+    {desc:'Uber Cartao Mae',valor:42.94,mes:'2026-04',data:'2026-04-23'},
+    {desc:'Injecao Cartao Mae (Parc. 2/6)',valor:250.00,mes:'2026-04',data:'2026-04-10'},
+    {desc:'Injecao Cartao Mae (Parc. 3/6)',valor:250.00,mes:'2026-05',data:'2026-05-10'},
+    {desc:'Injecao Cartao Mae (Parc. 4/6)',valor:250.00,mes:'2026-06',data:'2026-06-10'},
+    {desc:'Injecao Cartao Mae (Parc. 5/6)',valor:250.00,mes:'2026-07',data:'2026-07-10'},
+    {desc:'Injecao Cartao Mae (Parc. 6/6)',valor:250.00,mes:'2026-08',data:'2026-08-10'},
+    {desc:'IFood Cartao Mae',valor:83.99,mes:'2026-04',data:'2026-04-23'},
+    {desc:'IFood Cartao Mae',valor:52.99,mes:'2026-04',data:'2026-04-23'},
+    {desc:'IFood Cartao Mae',valor:32.71,mes:'2026-04',data:'2026-04-23'},
+];
+
+async function importar() {
+    // 1. Limpa dados antigos
+    msg('Limpando dados antigos...', 'warn');
+    await fetch('/api/limpar', { method: 'POST' });
+    msg('Dados antigos excluidos!\n', 'warn');
+
+    // 2. Monta lista para envio
+    const lista = dividas.map(d => ({
+        tipo: 'despesa', data: d.data, mesAno: d.mes,
+        descricao: d.desc, valor: d.valor,
+        categoria: 'Dívidas', status: 'pendente'
+    }));
+
+    // 3. Envia tudo de uma vez para a API
+    msg('Enviando para o banco SQL...', 'info');
+    const resp = await fetch('/api/transacoes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(lista)
+    });
+    const result = await resp.json();
+
+    // 4. Log
+    let total = 0;
+    dividas.forEach((d, i) => {
+        total += d.valor;
+        msg(`  [${i+1}/${dividas.length}] ${d.desc} -- R$ ${d.valor.toFixed(2)}`, 'ok');
+    });
+
+    msg('\n' + '='.repeat(50), 'info');
+    msg(`CONCLUIDO! ${result.total} dividas salvas no banco SQL`, 'ok');
+    msg(`Total: R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:2})}`, 'info');
+    msg(`\nAbra: http://localhost:8080/index.html`, 'info');
+}
+
+importar().catch(e => msg('ERRO: ' + e.message, 'warn'));
+</script></body></html>

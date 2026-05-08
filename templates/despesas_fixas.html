@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block titulo %}Despesas Fixas{% endblock %}
+
+{% block conteudo %}
+<div class="fc-page">
+    <div class="page-header">
+        <a href="{{ url_for('dashboard') }}" class="btn-voltar">← Voltar</a>
+        <h2 class="page-titulo">🔄 Despesas Fixas</h2>
+    </div>
+    
+    <p class="page-subtitulo">
+        Contas recorrentes lançadas automaticamente todo mês.
+    </p>
+
+    <div style="margin-bottom: 24px;">
+        <a href="{{ url_for('nova_fixa') }}" class="btn-salvar btn-verde" style="display:inline-block; text-align:center; text-decoration:none;">
+            ➕ Nova Despesa Fixa
+        </a>
+    </div>
+
+    {% if fixas %}
+        {% for f in fixas %}
+        <div class="lancamento-item">
+            <div class="lancamento-icon">
+                {% if f.categoria == 'Moradia' %}🏠
+                {% elif f.categoria == 'Alimentação' %}🍽️
+                {% elif f.categoria == 'Transporte' %}🚗
+                {% elif f.categoria == 'Saúde' %}🏥
+                {% elif f.categoria == 'Educação' %}📚
+                {% elif f.categoria == 'Lazer' %}🎉
+                {% elif f.categoria == 'Investimentos' %}📈
+                {% elif f.categoria == 'Dívidas' %}💳
+                {% else %}📌{% endif %}
+            </div>
+            <div class="lancamento-info">
+                <div class="lancamento-desc">{{ f.descricao }}</div>
+                <div class="lancamento-meta">{{ f.categoria }} • Todo dia {{ f.dia_vencimento }}</div>
+            </div>
+            <div class="lancamento-valor valor-negativo">{{ formatar_dinheiro(f.valor) }}</div>
+            
+            <div class="lancamento-acoes">
+                <a href="{{ url_for('editar_fixa', id=f.id) }}" class="btn-acao btn-editar" title="Editar">✏️</a>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="estado-vazio">
+            <div class="estado-vazio-icon">📝</div>
+            <div class="estado-vazio-msg">Nenhuma despesa fixa.</div>
+            <div class="estado-vazio-sub">Cadastre o aluguel, internet ou mensalidades aqui.</div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,85 @@
+<!--
+    EDITAR TRANSAÇÃO
+    
+    Este template recebe a variável 't' (a transação a ser editada).
+    O formulário vem preenchido com os valores atuais.
+    
+    O atributo 'value="{{ t.descricao }}"' preenche o campo com o valor atual.
+    Quando o usuário submete, o Python recebe os novos valores via request.form.
+-->
+{% extends 'base.html' %}
+{% block titulo %}Editar — {{ t.descricao }}{% endblock %}
+
+{% block conteudo %}
+<div class="fc-page">
+    <div class="page-header">
+        <a href="{{ url_for('dashboard') }}" class="btn-voltar">← Voltar</a>
+        <h2 class="page-titulo">✏️ Editar {{ 'Receita' if t.tipo == 'receita' else 'Despesa' }}</h2>
+    </div>
+
+    <form method="POST" class="fc-form" novalidate>
+        <div class="form-group">
+            <label class="form-label" for="data">📅 Data</label>
+            <input type="date" id="data" name="data" class="form-input" value="{{ t.data }}" required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="descricao">📝 Descrição</label>
+            <input type="text" id="descricao" name="descricao" class="form-input" 
+                   value="{{ t.descricao }}" required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="valor">💵 Valor (R$)</label>
+            <input type="number" id="valor" name="valor" class="form-input"
+                   value="{{ t.valor }}" min="0.01" step="0.01" required>
+        </div>
+
+        {% if t.tipo == 'despesa' %}
+        <div class="form-group">
+            <label class="form-label" for="categoria">🏷️ Categoria</label>
+            <select id="categoria" name="categoria" class="form-input form-select">
+                {% for cat in ['Moradia','Alimentação','Transporte','Saúde','Educação','Lazer','Investimentos','Dívidas'] %}
+                <option value="{{ cat }}" {{ 'selected' if t.categoria == cat else '' }}>{{ cat }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+
+        <div class="form-group">
+            <label class="form-label">✅ Status</label>
+            <div class="radio-group">
+                <label class="radio-label">
+                    <input type="radio" name="status" value="pago" {{ 'checked' if t.status == 'pago' else '' }}>
+                    <span class="radio-custom"></span>
+                    {{ 'Já recebi' if t.tipo == 'receita' else 'Já paguei' }}
+                </label>
+                <label class="radio-label">
+                    <input type="radio" name="status" value="pendente" {{ 'checked' if t.status == 'pendente' else '' }}>
+                    <span class="radio-custom"></span>
+                    {{ 'Ainda vou receber' if t.tipo == 'receita' else 'Ainda vou pagar' }}
+                </label>
+            </div>
+        </div>
+
+        {% if t.tipo == 'receita' %}
+        <div class="form-group">
+            <label class="form-label" for="dataPrevista">📅 Data Prevista</label>
+            <input type="date" id="dataPrevista" name="dataPrevista" class="form-input" 
+                   value="{{ t.dataPrevista or '' }}">
+        </div>
+        {% endif %}
+
+        <button type="submit" class="btn-salvar btn-verde">💾 Salvar Alterações</button>
+    </form>
+
+    <!-- Botão de excluir separado -->
+    <div style="margin-top:16px;text-align:center">
+        <a href="{{ url_for('excluir', id=t.id) }}" class="btn-salvar btn-vermelho"
+           style="display:inline-block;text-decoration:none;max-width:300px"
+           onclick="return confirm('Tem certeza que deseja excluir?')">
+            🗑️ Excluir Transação
+        </a>
+    </div>
+</div>
+{% endblock %}

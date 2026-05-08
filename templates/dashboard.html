@@ -1,0 +1,172 @@
+<!--
+    DASHBOARD — Painel Principal
+    
+    A tag extends 'base.html' herda toda a estrutura do base.html
+    A tag block conteudo substitui o bloco "conteudo" do base.html
+    
+    As variáveis (mes_nome, saldo, receitas, etc.) foram passadas pelo
+    app.py na função dashboard() via render_template().
+-->
+{% extends 'base.html' %}
+{% block titulo %}Troqui — Dashboard{% endblock %}
+
+{% block conteudo %}
+<header class="fc-header" style="border-bottom: none; padding-bottom: 0;">
+    <div class="fc-brand">
+        <span class="fc-brand-icon">🐘</span>
+        <span class="fc-brand-name">Troqui</span>
+    </div>
+</header>
+
+<!-- Banner do Mês Vigente em destaque -->
+<div style="text-align: center; margin-bottom: 30px; margin-top: 10px;">
+    <h1 style="font-size: 2.8rem; font-weight: 700; color: var(--text-primary); text-transform: capitalize; letter-spacing: -0.03em; line-height: 1;">
+        {{ mes_nome }}
+    </h1>
+    <p style="color: var(--gold-mid); font-size: 0.85rem; letter-spacing: 0.15em; text-transform: uppercase; margin-top: 8px; font-weight: 600;">
+        Resumo Financeiro
+    </p>
+</div>
+
+<!-- Cards de resumo — valores calculados pelo Python em app.py -->
+<div class="dash-cards">
+    <!-- Saldo Acumulado -->
+    <div class="dash-card card-saldo">
+        <i class="ph ph-wallet dash-card-icon" style="color: var(--gold-bright);"></i>
+        <div class="dash-card-label">Saldo Disponível</div>
+        <div class="dash-card-valor">{{ formatar_dinheiro(saldo) }}</div>
+    </div>
+    
+    <!-- Receitas do Mês -->
+    <div class="dash-card card-receita">
+        <i class="ph ph-trend-up dash-card-icon" style="color: var(--green-bright);"></i>
+        <div class="dash-card-label">Receitas (Mês)</div>
+        <div class="dash-card-valor">{{ formatar_dinheiro(receitas) }}</div>
+    </div>
+
+    <!-- Despesas Pagas -->
+    <div class="dash-card card-despesa">
+        <i class="ph ph-trend-down dash-card-icon" style="color: var(--blue-bright);"></i>
+        <div class="dash-card-label">Despesas Pagas</div>
+        <div class="dash-card-valor">{{ formatar_dinheiro(despesas) }}</div>
+    </div>
+
+    <!-- Pendentes (Atrasadas + Este mês) -->
+    <div class="dash-card card-pendente">
+        <i class="ph ph-hourglass dash-card-icon" style="color: var(--red-bright);"></i>
+        <div class="dash-card-label">Despesas Pendentes</div>
+        <div class="dash-card-valor">{{ formatar_dinheiro(pendentes) }}</div>
+    </div>
+</div>
+
+<!-- Gráfico de Pizza das Despesas -->
+<section class="fc-chart-section info-card" style="text-align: center; margin-bottom: 30px;">
+    <h3 style="font-size: 1rem; color: var(--text-primary); margin-bottom: 20px; font-weight: 600;">Distribuição de Despesas</h3>
+    <!-- Canvas onde o Chart.js vai desenhar -->
+    <div style="position: relative; max-width: 300px; margin: 0 auto;">
+        <canvas id="graficoDespesas"></canvas>
+    </div>
+</section>
+
+<!-- Menu de navegação -->
+<!-- url_for('nome_da_funcao') gera a URL para cada rota Python -->
+<nav class="fc-menu">
+    <h2 class="fc-menu-titulo">Menu Principal</h2>
+    <div class="menu-grid">
+        <a href="{{ url_for('lancamento_tipo') }}" class="menu-btn">
+            <i class="ph ph-plus-circle menu-btn-icon" style="color: var(--gold-bright);"></i>
+            <span class="menu-btn-texto">Cadastrar Lançamento</span>
+        </a>
+        <a href="{{ url_for('dividas') }}" class="menu-btn">
+            <i class="ph ph-warning-circle menu-btn-icon" style="color: var(--red-bright);"></i>
+            <span class="menu-btn-texto">Dívidas Ativas</span>
+        </a>
+        <a href="{{ url_for('fixas') }}" class="menu-btn">
+            <i class="ph ph-arrows-clockwise menu-btn-icon" style="color: var(--blue-bright);"></i>
+            <span class="menu-btn-texto">Despesas Fixas</span>
+        </a>
+        <a href="{{ url_for('mes_detalhe', mes_ano=ma_atual) }}" class="menu-btn">
+            <i class="ph ph-calendar menu-btn-icon" style="color: var(--gold-glow);"></i>
+            <span class="menu-btn-texto">Relatório Mensal</span>
+        </a>
+    </div>
+</nav>
+
+<!-- Biblioteca Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // Recupera os dados do Python injetados pelo Jinja2
+    const labels = {{ cat_labels | safe }};
+    const valores = {{ cat_valores | safe }};
+
+    if (valores.length > 0) {
+        const ctx = document.getElementById('graficoDespesas').getContext('2d');
+        
+        new Chart(ctx, {
+            type: 'bar', // Gráfico de barras (pilares)
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Pago',
+                    data: valores,
+                    backgroundColor: '#D4AF37', // Ouro Champagne
+                    borderRadius: 6, // Cantos arredondados no topo da barra
+                    barThickness: 32, // Largura da barra
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: false // Esconde a legenda pois o eixo X já tem os nomes
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(28, 28, 30, 0.9)',
+                        titleColor: '#F3E5AB',
+                        bodyColor: '#FFFFFF',
+                        callbacks: {
+                            label: function(context) {
+                                return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(context.raw);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#8E8E93', font: { family: "'Inter', sans-serif" } },
+                        grid: { display: false }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { 
+                            color: '#8E8E93', 
+                            font: { family: "'Inter', sans-serif" },
+                            callback: function(value) {
+                                return 'R$ ' + value;
+                            }
+                        },
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    }
+                },
+                animation: {
+                    duration: 1000,
+                    easing: 'easeOutQuart'
+                }
+            }
+        });
+    } else {
+        // Se não tiver despesas, mostra uma mensagem amigável no lugar do canvas
+        const chartSec = document.querySelector('.fc-chart-section');
+        const canvasContainer = chartSec.querySelector('div');
+        canvasContainer.innerHTML = `
+            <div style="padding: 40px 20px; color: var(--gold-mid); font-weight: 500; font-size: 1.1rem;">
+                <span style="font-size: 3.5rem; margin-bottom: 15px; display: block; opacity: 0.9;">🐘</span>
+                O Gordi está orgulhoso!<br>Nenhuma despesa paga neste mês.
+            </div>
+        `;
+    }
+</script>
+{% endblock %}

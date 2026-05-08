@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block titulo %}Nova Despesa{% endblock %}
+
+{% block conteudo %}
+<div class="fc-page">
+    <div class="page-header">
+        <a href="{{ url_for('lancamento_tipo') }}" class="btn-voltar">← Voltar</a>
+        <h2 class="page-titulo">📉 Nova Despesa</h2>
+    </div>
+
+    <form method="POST" class="fc-form" novalidate>
+        <div class="form-group">
+            <label class="form-label" for="data">📅 Data do Lançamento</label>
+            <input type="date" id="data" name="data" class="form-input" value="{{ hoje }}" required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="descricao">📝 Descrição</label>
+            <input type="text" id="descricao" name="descricao" class="form-input"
+                   placeholder="Ex: Aluguel, Supermercado, Pix para..." list="list-despesa" required>
+            <datalist id="list-despesa">
+                <option value="Aluguel"><option value="Conta de luz"><option value="Conta de água">
+                <option value="Internet"><option value="Supermercado"><option value="Combustível">
+                <option value="Farmácia"><option value="Academia">
+            </datalist>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="valor">💵 Valor (R$)</label>
+            <input type="number" id="valor" name="valor" class="form-input"
+                   placeholder="0,00" min="0.01" step="0.01" required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="categoria">🏷️ Categoria</label>
+            <select id="categoria" name="categoria" class="form-input form-select" required>
+                <option value="">Selecione a categoria...</option>
+                <option value="Moradia">🏠 Moradia</option>
+                <option value="Alimentação">🍽️ Alimentação</option>
+                <option value="Transporte">🚗 Transporte</option>
+                <option value="Saúde">🏥 Saúde</option>
+                <option value="Educação">📚 Educação</option>
+                <option value="Lazer">🎉 Lazer</option>
+                <option value="Investimentos">📈 Investimentos</option>
+                <option value="Dívidas">💳 Dívidas</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">💳 Forma de Pagamento</label>
+            <div class="radio-group">
+                <label class="radio-label">
+                    <input type="radio" name="forma" value="avista" checked>
+                    <span class="radio-custom"></span> À vista
+                </label>
+                <label class="radio-label">
+                    <input type="radio" name="forma" value="parcelado" id="d-parcelado">
+                    <span class="radio-custom"></span> Parcelado
+                </label>
+            </div>
+        </div>
+
+        <div class="form-group hidden" id="grupo-parcelas">
+            <label class="form-label" for="parcelas">🔢 Número de Parcelas</label>
+            <input type="number" id="parcelas" name="parcelas" class="form-input" placeholder="Ex: 12" min="2" step="1">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="mesPrevisto">📅 Mês Previsto para Pagamento</label>
+            <input type="month" id="mesPrevisto" name="mesPrevisto" class="form-input" required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">✅ Status do Pagamento</label>
+            <div class="radio-group">
+                <label class="radio-label">
+                    <input type="radio" name="status" value="pago">
+                    <span class="radio-custom"></span> Já paguei
+                </label>
+                <label class="radio-label">
+                    <input type="radio" name="status" value="pendente" checked>
+                    <span class="radio-custom"></span> Ainda vou pagar
+                </label>
+            </div>
+        </div>
+
+        <button type="submit" class="btn-salvar btn-vermelho">💾 Salvar Despesa</button>
+    </form>
+</div>
+
+<script>
+    document.querySelectorAll('input[name="forma"]').forEach(r => {
+        r.addEventListener('change', () => {
+            document.getElementById('grupo-parcelas').classList.toggle('hidden', r.value !== 'parcelado');
+        });
+    });
+</script>
+{% endblock %}

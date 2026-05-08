@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block titulo %}Criar Conta | Troqui{% endblock %}
+
+{% block conteudo %}
+<div style="max-width: 400px; margin: 40px auto; background: var(--bg-surface); padding: 30px; border-radius: var(--r-lg); border: 1px solid var(--border);">
+
+    <h2 style="text-align: center; color: var(--gold-bright); margin-bottom: 20px;">
+        🐘 Criar Conta
+    </h2>
+
+    <form method="POST">
+        <div class="form-group">
+            <label class="form-label">Seu Nome:</label>
+            <input type="text" name="nome" class="form-input" required placeholder="Como quer ser chamado?">
+        </div>
+        <div class="form-group">
+            <label class="form-label">E-mail:</label>
+            <input type="email" name="email" class="form-input" required placeholder="seu@email.com">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Senha:</label>
+            <input type="password" name="senha" class="form-input" required minlength="6" placeholder="No mínimo 6 caracteres">
+        </div>
+        <button type="submit" class="btn-salvar" style="width: 100%; margin-top: 10px;">
+            Criar Conta
+        </button>
+    </form>
+
+    <p style="text-align: center; margin-top: 20px; font-size: 0.9rem; color: var(--text-muted);">
+        Já tem uma conta? <a href="{{ url_for('login') }}" style="color: var(--amber-bright);">Fazer Login</a>
+    </p>
+</div>
+{% endblock %}

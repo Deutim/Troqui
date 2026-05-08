@@ -1,0 +1,33 @@
+# Banco de dados (NUNCA subir para o servidor - contém dados reais)
+*.db
+*.db-journal
+
+# Cache do Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# Ambiente virtual
+venv/
+env/
+.env
+
+# IDE
+.vscode/
+.idea/
+.cursor/
+.cursorrules
+
+# Sistema operacional
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Arquivos temporários
+*.tmp
+*.bak
+*.swp
+
+# ZIPs de deploy
+*.zip

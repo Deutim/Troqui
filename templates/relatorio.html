@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block titulo %}Relatório Mensal{% endblock %}
+
+{% block conteudo %}
+<div class="fc-page">
+    <div class="page-header">
+        <a href="{{ url_for('dashboard') }}" class="btn-voltar">← Voltar</a>
+        <h2 class="page-titulo">📅 Relatório Mensal</h2>
+    </div>
+
+    {% if anos %}
+        {% for ano, meses_do_ano in anos.items() %}
+        <details class="ano-grupo" {% if ano == ma_atual.split('-')[0] %}open{% endif %} style="margin-bottom: 16px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden;">
+            <summary style="padding: 16px 20px; font-family: 'Rajdhani', sans-serif; font-size: 1.5rem; font-weight: 700; color: var(--amber-bright); cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between;">
+                {{ ano }}
+                <span style="font-size: 1rem; color: var(--text-muted);">▼</span>
+            </summary>
+            
+            <div style="padding: 0 16px 16px 16px;">
+                {% for mes in meses_do_ano %}
+                {% set resolvido = (mes.mesAno < ma_atual) and (mes.pendentes == 0) %}
+                {% set atual = (mes.mesAno == ma_atual) %}
+                
+                <a href="{{ url_for('mes_detalhe', mes_ano=mes.mesAno) }}" class="mes-card" style="text-decoration:none; color:inherit; display:block; transition:all 0.3s ease; {% if resolvido %}opacity: 0.45; filter: grayscale(80%);{% endif %} {% if atual %}border-color: var(--amber-bright); background: linear-gradient(135deg, rgba(255,140,0,0.12) 0%, rgba(255,140,0,0.02) 100%); box-shadow: 0 0 24px rgba(255,140,0,0.15); transform: scale(1.02); margin: 18px 0; position: relative; overflow: hidden;{% endif %}">
+                    {% if atual %}
+                    <!-- Barra de destaque lateral -->
+                    <div style="position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--amber-bright); box-shadow: 0 0 12px var(--amber-bright);"></div>
+                    {% endif %}
+                    
+                    <div class="mes-card-header">
+                        <div class="mes-card-nome" {% if atual %}style="color: var(--amber-bright); font-size: 1.4rem; text-shadow: 0 0 12px rgba(255,140,0,0.4);"{% endif %}>
+                            {{ mes.nome }}
+                            {% if resolvido %} <span title="Mês Quitado" style="font-size:0.9rem">✅</span> {% endif %}
+                            {% if atual %} <span style="font-size: 0.65rem; background: var(--amber-bright); color: #000; padding: 3px 8px; border-radius: 999px; margin-left: 8px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; vertical-align: middle; box-shadow: 0 0 8px rgba(255,140,0,0.5);">Hoje</span>{% endif %}
+                        </div>
+                        <div class="mes-card-saldo" {% if atual %}style="font-size: 1.3rem; color: #fff;"{% endif %}>{{ formatar_dinheiro(mes.saldo) }}</div>
+                    </div>
+                    <div class="mes-card-stats">
+                        <span class="valor-positivo">📈 {{ formatar_dinheiro(mes.receitas) }}</span>
+                        <span class="valor-negativo">📉 Pagas: {{ formatar_dinheiro(mes.despesas) }}</span>
+                        <span class="valor-azul">⏳ Pendentes: {{ formatar_dinheiro(mes.pendentes) }}</span>
+                    </div>
+                    {% if mes.categorias %}
+                    <div class="categorias-bar">
+                        {% for cat, pct in mes.categorias.items() %}
+                        <span class="cat-pill" {% if resolvido %}style="border-color: transparent; background: rgba(255,255,255,0.05);"{% endif %}>{{ cat }} {{ pct }}%</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </a>
+                {% endfor %}
+            </div>
+        </details>
+        {% endfor %}
+    {% else %}
+        <div class="estado-vazio">
+            <div class="estado-vazio-icon">📅</div>
+            <div class="estado-vazio-msg">Nenhum mês cadastrado.</div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

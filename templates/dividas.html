@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block titulo %}Dívidas Ativas{% endblock %}
+
+{% block conteudo %}
+<div class="fc-page">
+    <div class="page-header">
+        <a href="{{ url_for('dashboard') }}" class="btn-voltar">← Voltar</a>
+        <h2 class="page-titulo">💳 Dívidas Ativas</h2>
+    </div>
+
+    {% if dividas %}
+        <div class="info-card" style="border-color:var(--red-bright)">
+            <div class="info-card-titulo">Total de Dívidas Pendentes</div>
+            <div class="info-card-valor valor-negativo">{{ formatar_dinheiro(total) }}</div>
+        </div>
+
+        <div class="secao-titulo">Dívidas Ativas</div>
+
+        <form method="POST" action="{{ url_for('marcar_pagos_lote') }}" id="form-lote">
+
+        {% for t in dividas %}
+        <div class="lancamento-item">
+            <input type="checkbox" name="ids" value="{{ t.id }}" class="chk-lote" data-valor="{{ t.valor }}">
+            <div class="lancamento-icon">💳</div>
+            <div class="lancamento-info">
+                <div class="lancamento-desc">{{ t.descricao }}</div>
+                <div class="lancamento-meta">Para: {{ nome_mes(t.mesAno) }}</div>
+            </div>
+            <div class="lancamento-valor valor-negativo">{{ formatar_dinheiro(t.valor) }}</div>
+            <a href="{{ url_for('marcar_pago', id=t.id) }}" 
+               class="badge-status badge-divida" style="cursor:pointer;text-decoration:none">
+                MARCAR PAGO
+            </a>
+            <div class="lancamento-acoes">
+                <a href="{{ url_for('editar', id=t.id) }}" class="btn-acao btn-editar" title="Editar">✏️</a>
+                <a href="{{ url_for('excluir', id=t.id) }}" class="btn-acao btn-excluir" title="Excluir"
+                   onclick="return confirm('Excluir {{ t.descricao }}?')">🗑️</a>
+            </div>
+        </div>
+        {% endfor %}
+
+            <!-- Barra flutuante de seleção em lote -->
+            <div id="barra-lote" class="barra-lote">
+                <div class="barra-lote-info">
+                    <span id="lote-qtd">0</span> selecionados <br>
+                    <strong>Total: R$ <span id="lote-total">0,00</span></strong>
+                </div>
+                <button type="submit" class="btn-salvar btn-verde" style="margin:0; padding:12px 24px;">Pagar Selecionados</button>
+            </div>
+        </form>
+
+    {% else %}
+        <div class="estado-vazio">
+            <div class="estado-vazio-icon">🎉</div>
+            <div class="estado-vazio-msg">Sem dívidas pendentes!</div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

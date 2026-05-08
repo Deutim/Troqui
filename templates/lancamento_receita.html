@@ -1,0 +1,81 @@
+<!--
+    FORMULÁRIO DE RECEITA
+    
+    method="POST" = Quando o usuário clica em Salvar, os dados são
+    enviados para a mesma URL via POST. O Python (app.py) recebe
+    os dados em request.form e salva no banco SQLite.
+    
+    O atributo 'name' de cada input é a chave que o Python usa
+    para acessar o valor: request.form['descricao']
+-->
+{% extends 'base.html' %}
+{% block titulo %}Nova Receita{% endblock %}
+
+{% block conteudo %}
+<div class="fc-page">
+    <div class="page-header">
+        <a href="{{ url_for('lancamento_tipo') }}" class="btn-voltar">← Voltar</a>
+        <h2 class="page-titulo">📈 Nova Receita</h2>
+    </div>
+
+    <form method="POST" class="fc-form" novalidate>
+        <div class="form-group">
+            <label class="form-label" for="data">📅 Data do Lançamento</label>
+            <input type="date" id="data" name="data" class="form-input" value="{{ hoje }}" required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="descricao">📝 Descrição</label>
+            <input type="text" id="descricao" name="descricao" class="form-input"
+                   placeholder="Ex: Salário, Dividendos, Comissão..." list="list-receita" required>
+            <datalist id="list-receita">
+                <option value="Salário">
+                <option value="Dividendos">
+                <option value="Comissão">
+                <option value="Freelance">
+                <option value="Extras">
+                <option value="Aluguel recebido">
+                <option value="Pensão">
+            </datalist>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="valor">💵 Valor (R$)</label>
+            <input type="number" id="valor" name="valor" class="form-input"
+                   placeholder="0,00" min="0.01" step="0.01" required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">✅ Status do Recebimento</label>
+            <div class="radio-group">
+                <label class="radio-label">
+                    <input type="radio" name="status" value="pago" checked>
+                    <span class="radio-custom"></span>
+                    Já recebi
+                </label>
+                <label class="radio-label">
+                    <input type="radio" name="status" value="pendente" id="r-pendente">
+                    <span class="radio-custom"></span>
+                    Ainda vou receber
+                </label>
+            </div>
+        </div>
+
+        <div class="form-group hidden" id="grupo-data-prevista">
+            <label class="form-label" for="dataPrevista">📅 Data Prevista para Receber</label>
+            <input type="date" id="dataPrevista" name="dataPrevista" class="form-input">
+        </div>
+
+        <button type="submit" class="btn-salvar btn-verde">💾 Salvar Receita</button>
+    </form>
+</div>
+
+<script>
+    // Mostra/esconde campo de data prevista conforme o status
+    document.querySelectorAll('input[name="status"]').forEach(r => {
+        r.addEventListener('change', () => {
+            document.getElementById('grupo-data-prevista').classList.toggle('hidden', r.value !== 'pendente');
+        });
+    });
+</script>
+{% endblock %}

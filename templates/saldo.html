@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block titulo %}Saldo Disponível{% endblock %}
+
+{% block conteudo %}
+<div class="fc-page">
+    <div class="page-header">
+        <a href="{{ url_for('dashboard') }}" class="btn-voltar">← Voltar</a>
+        <h2 class="page-titulo">💵 Saldo Disponível</h2>
+    </div>
+
+    <!-- 
+        Os valores (resumo.receitas, resumo.despesas, etc.) 
+        foram calculados pelo Python em app.py → função saldo()
+        e passados via render_template().
+    -->
+    <div class="info-card">
+        <div class="info-card-titulo">Receitas do Mês ({{ mes_nome }})</div>
+        <div class="info-card-valor valor-positivo">{{ formatar_dinheiro(resumo.receitas) }}</div>
+    </div>
+
+    <div class="info-card">
+        <div class="info-card-titulo">Despesas Pagas</div>
+        <div class="info-card-valor valor-negativo">{{ formatar_dinheiro(resumo.despesas) }}</div>
+    </div>
+
+    <div class="secao-titulo">Resultado</div>
+
+    <div class="info-card" style="border-color:var(--amber-bright);background:rgba(255,140,0,.05)">
+        <div class="info-card-titulo">Saldo Disponível</div>
+        <div class="info-card-valor valor-amber">{{ formatar_dinheiro(resumo.saldo) }}</div>
+    </div>
+
+    {% if resumo.pendentes > 0 %}
+    <div class="info-card" style="border-color:var(--red-bright);background:rgba(255,50,50,.05)">
+        <div class="info-card-titulo">⚠️ Despesas Pendentes</div>
+        <div class="info-card-valor valor-negativo">{{ formatar_dinheiro(resumo.pendentes) }}</div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

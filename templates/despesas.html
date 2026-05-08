@@ -1,0 +1,93 @@
+<!--
+    DESPESAS DO MÊS
+    
+    Demonstra uso de {% for %} do Jinja2 — equivalente ao for do Python.
+    Também usa {% if %} para exibição condicional.
+    
+    O dicionário 'icones' foi passado pelo Python para mapear
+    cada categoria ao seu emoji correspondente.
+-->
+{% extends 'base.html' %}
+{% block titulo %}Despesas do Mês{% endblock %}
+
+{% block conteudo %}
+<div class="fc-page">
+    <div class="page-header">
+        <a href="{{ url_for('dashboard') }}" class="btn-voltar">← Voltar</a>
+        <h2 class="page-titulo">📊 Despesas do Mês</h2>
+    </div>
+
+    {% if despesas %}
+        <!-- Resumo: total pago e pendente -->
+        <div class="dash-cards">
+            <div class="dash-card card-despesa">
+                <span class="dash-card-label">Total Pago</span>
+                <span class="dash-card-valor">{{ formatar_dinheiro(total_pago) }}</span>
+            </div>
+            <div class="dash-card card-pendente">
+                <span class="dash-card-label">Total Pendente</span>
+                <span class="dash-card-valor">{{ formatar_dinheiro(total_pendente) }}</span>
+            </div>
+        </div>
+
+        <div class="secao-titulo">Lista de Despesas</div>
+
+        <form method="POST" action="{{ url_for('marcar_pagos_lote') }}" id="form-lote">
+
+        <!-- 
+            {% for t in despesas %} = Loop Python no template!
+            Para cada despesa na lista, gera um card HTML.
+            
+            icones.get(t.categoria, '📉') = Pega o ícone da categoria,
+            ou usa '📉' se a categoria não tiver ícone definido.
+        -->
+        {% for t in despesas %}
+        <div class="lancamento-item">
+            {% if t.status != 'pago' %}
+            <input type="checkbox" name="ids" value="{{ t.id }}" class="chk-lote" data-valor="{{ t.valor }}">
+            {% endif %}
+            <div class="lancamento-icon">{{ icones.get(t.categoria, '📉') }}</div>
+            <div class="lancamento-info">
+                <div class="lancamento-desc">{{ t.descricao }}</div>
+                <div class="lancamento-meta">{{ formatar_data(t.data) }} • {{ t.categoria }}</div>
+            </div>
+            <div class="lancamento-valor valor-negativo">-{{ formatar_dinheiro(t.valor) }}</div>
+            
+            {% if t.status == 'pago' %}
+                <span class="badge-status badge-pago">PAGO</span>
+            {% else %}
+                <!-- url_for com parâmetro: gera /marcar-pago/42 -->
+                <a href="{{ url_for('marcar_pago', id=t.id) }}" 
+                   class="badge-status badge-pendente" style="cursor:pointer;text-decoration:none">
+                    MARCAR PAGO
+                </a>
+            {% endif %}
+            
+            <!-- Botões de ação: editar e excluir -->
+            <div class="lancamento-acoes">
+                <a href="{{ url_for('editar', id=t.id) }}" class="btn-acao btn-editar" title="Editar">✏️</a>
+                <a href="{{ url_for('excluir', id=t.id) }}" class="btn-acao btn-excluir" title="Excluir"
+                   onclick="return confirm('Excluir {{ t.descricao }}?')">🗑️</a>
+            </div>
+        </div>
+        {% endfor %}
+        
+            <!-- Barra flutuante de seleção em lote -->
+            <div id="barra-lote" class="barra-lote">
+                <div class="barra-lote-info">
+                    <span id="lote-qtd">0</span> selecionados <br>
+                    <strong>Total: R$ <span id="lote-total">0,00</span></strong>
+                </div>
+                <button type="submit" class="btn-salvar btn-verde" style="margin:0; padding:12px 24px;">Pagar Selecionados</button>
+            </div>
+        </form>
+
+    {% else %}
+        <!-- Estado vazio: nenhuma despesa encontrada -->
+        <div class="estado-vazio">
+            <div class="estado-vazio-icon">📉</div>
+            <div class="estado-vazio-msg">Nenhuma despesa neste mês.</div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

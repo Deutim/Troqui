@@ -1,0 +1,664 @@
+/* =========================================================
+   FinanceControl — style.css
+   Visual idêntico à QuantumCalc: tema escuro com âmbar
+   Cada seção tem comentários explicando o que faz.
+   ========================================================= */
+
+/* --- Reset: remove espaçamentos padrão do navegador ---
+   "box-sizing: border-box" faz com que padding e border
+   sejam incluídos no tamanho total do elemento,
+   evitando surpresas de layout. */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* --- Variáveis CSS (como constantes de cor e tamanho) ---
+   :root define variáveis globais que podem ser usadas
+   em qualquer parte do CSS com var(--nome-da-variavel).
+   Isso facilita mudar o tema do sistema inteiro de uma vez. */
+:root {
+  /* Tons escuros de fundo */
+  --bg-base:      #080810;  /* Fundo da página */
+  --bg-surface:   #0f0f1a;  /* Superfícies levemente mais claras */
+  --bg-card:      #1a1a2a;  /* Cards e painéis */
+  --bg-card-hi:   #1f1f30;  /* Cards com hover */
+
+  /* Âmbar (laranja dourado) — cor principal do sistema */
+  --amber-dim:    #7a4500;
+  --amber-mid:    #c06000;
+  --amber-bright: #ff8c00;
+  --amber-glow:   #ffaa33;
+
+  /* Verde — receitas e valores positivos */
+  --green-bright: #00cc66;
+  --green-dim:    #003322;
+  --green-border: rgba(0,204,102,.3);
+
+  /* Vermelho — despesas e valores negativos */
+  --red-bright:   #ff4455;
+  --red-dim:      #330011;
+  --red-border:   rgba(255,68,85,.3);
+
+  /* Azul — informações neutras, pendências */
+  --blue-bright:  #3388ff;
+
+  /* Cores de texto */
+  --text-primary:   #f0e8d8;  /* Texto principal */
+  --text-secondary: #9090a8;  /* Texto secundário/labels */
+  --text-muted:     #505068;  /* Texto desativado/sutil */
+
+  /* Bordas */
+  --border:       rgba(255,255,255,.06);
+  --border-amber: rgba(255,140,0,.35);
+
+  /* Sombras */
+  --shadow-sm:    0 2px 8px rgba(0,0,0,.5);
+  --shadow-md:    0 4px 24px rgba(0,0,0,.7);
+  --shadow-amber: 0 0 20px rgba(255,140,0,.2);
+
+  /* Raios de borda (arredondamento dos cantos) */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --r-xl: 24px;
+
+  /* Velocidades de transição/animação */
+  --t-fast: 130ms ease;
+  --t-mid:  240ms ease;
+}
+
+/* --- Fonte e cor de base do corpo da página --- */
+html { font-size: 16px; height: 100%; }
+
+body {
+  font-family: 'Space Grotesk', sans-serif;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden; /* Evita barra de rolagem horizontal */
+}
+
+/* =========================================================
+   FUNDO ANIMADO (grade e brilhos)
+   Cria o efeito visual de grade e luz ambiente,
+   idêntico ao da QuantumCalc para manter consistência.
+   ========================================================= */
+.bg-grid {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    linear-gradient(rgba(255,140,0,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,140,0,.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+.bg-glow-1 {
+  position: fixed; top: -200px; left: -200px;
+  width: 600px; height: 600px; border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(255,140,0,.06) 0%, transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+.bg-glow-2 {
+  position: fixed; bottom: -200px; right: -200px;
+  width: 600px; height: 600px; border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(0,200,100,.04) 0%, transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+
+/* --- Container principal da aplicação ---
+   z-index: 1 garante que o conteúdo fique acima dos efeitos de fundo.
+   max-width limita a largura para ficar legível em telas grandes. */
+#app {
+  position: relative; z-index: 1;
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 0 16px 60px;
+  min-height: 100vh;
+}
+
+/* =========================================================
+   SISTEMA DE VIEWS (Telas do sistema)
+   Cada "view" é uma tela diferente. Apenas a que tiver
+   a classe "active" fica visível. O JavaScript alterna isso.
+   ========================================================= */
+.view { display: none; }
+
+/* Quando o JS adiciona a classe "active", a view aparece
+   com uma animação suave de entrada (fadeSlide) */
+.view.active {
+  display: block;
+  animation: fadeSlide 0.3s ease;
+}
+
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Utilitário para esconder elementos condicionalmente */
+.hidden { display: none !important; }
+
+/* =========================================================
+   TELA DE BOOT (Inicialização do sistema)
+   ========================================================= */
+.boot-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 20px;
+  text-align: center;
+  padding: 20px;
+}
+
+/* Ícone principal pulsante — chama atenção ao carregar */
+.boot-icon {
+  font-size: 5rem;
+  filter: drop-shadow(0 0 24px rgba(255,140,0,.7));
+  animation: pulsate 2s ease-in-out infinite;
+}
+
+@keyframes pulsate {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.08); }
+}
+
+.boot-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  color: var(--amber-bright);
+  text-shadow: 0 0 20px rgba(255,140,0,.5);
+}
+
+.boot-badge {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .65rem;
+  letter-spacing: .22em;
+  color: var(--amber-bright);
+  background: rgba(255,140,0,.12);
+  border: 1px solid var(--border-amber);
+  border-radius: 4px;
+  padding: 3px 8px;
+}
+
+/* Barra de progresso que vai de 0% a 100% durante o boot */
+.boot-bar-wrap {
+  width: 260px; height: 3px;
+  background: var(--bg-card);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.boot-bar {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, var(--amber-dim), var(--amber-bright));
+  border-radius: 999px;
+  transition: width 0.4s ease;
+  box-shadow: 0 0 8px var(--amber-bright);
+}
+
+.boot-status {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .78rem;
+  letter-spacing: .12em;
+  color: var(--text-secondary);
+}
+
+/* =========================================================
+   CABEÇALHO (Header do Dashboard)
+   ========================================================= */
+.fc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 0 14px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+
+.fc-brand { display: flex; align-items: center; gap: 8px; }
+.fc-brand-icon { font-size: 1.4rem; }
+.fc-brand-name {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700; font-size: 1.3rem;
+  letter-spacing: .06em;
+  color: var(--amber-bright);
+  text-shadow: 0 0 12px rgba(255,140,0,.4);
+}
+
+/* Chip que mostra o mês atual (ex: "Abril 2026") */
+.fc-mes-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .75rem; letter-spacing: .12em;
+  color: var(--amber-glow);
+  background: rgba(255,140,0,.1);
+  border: 1px solid var(--border-amber);
+  border-radius: var(--r-sm);
+  padding: 4px 10px;
+}
+
+/* =========================================================
+   CARDS DO DASHBOARD (4 indicadores financeiros)
+   ========================================================= */
+.dash-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2 colunas lado a lado */
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.dash-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  display: flex; flex-direction: column; gap: 4px;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--t-fast);
+}
+.dash-card:hover {
+  background: var(--bg-card-hi);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.dash-card-icon  { font-size: 1.4rem; }
+.dash-card-label { font-size: .75rem; color: var(--text-secondary); font-weight: 500; }
+.dash-card-valor {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 1.2rem; font-weight: 700;
+  margin-top: 2px;
+}
+
+/* Cor da borda e do valor de cada card */
+.card-saldo   { border-color: var(--border-amber); }
+.card-saldo   .dash-card-valor { color: var(--amber-bright); }
+.card-receita { border-color: var(--green-border); }
+.card-receita .dash-card-valor { color: var(--green-bright); }
+.card-despesa { border-color: var(--red-border); }
+.card-despesa .dash-card-valor { color: var(--red-bright); }
+.card-pendente .dash-card-valor { color: var(--blue-bright); }
+
+/* =========================================================
+   MENU PRINCIPAL (Grid de botões de navegação)
+   ========================================================= */
+.fc-menu-titulo {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .7rem; letter-spacing: .2em;
+  color: var(--text-muted); text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.menu-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 20px 14px;
+  cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  transition: all var(--t-fast);
+  color: var(--text-primary);
+  font-family: 'Space Grotesk', sans-serif;
+}
+.menu-btn:hover {
+  background: var(--bg-card-hi);
+  border-color: var(--border-amber);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-amber);
+}
+.menu-btn:active { transform: scale(.97); }
+.menu-btn-icon  { font-size: 1.9rem; }
+.menu-btn-texto { font-size: .85rem; font-weight: 600; text-align: center; }
+
+/* Botão "Fechar Sistema" com cor vermelha de atenção */
+.menu-btn-fechar { border-color: rgba(255,68,85,.2); color: var(--red-bright); }
+.menu-btn-fechar:hover {
+  background: rgba(255,68,85,.08);
+  border-color: var(--red-bright);
+  box-shadow: 0 0 16px rgba(255,68,85,.2);
+}
+
+/* =========================================================
+   PÁGINAS INTERNAS (Layout comum de todas as sub-telas)
+   ========================================================= */
+.fc-page { padding-top: 20px; }
+
+/* Cabeçalho de cada tela interna (botão voltar + título) */
+.page-header {
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 24px; padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.page-titulo {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.5rem; font-weight: 700;
+}
+
+.page-subtitulo {
+  color: var(--text-secondary); margin-bottom: 20px; font-size: .95rem;
+}
+
+/* Botão "← Voltar" presente em todas as telas internas */
+.btn-voltar {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  color: var(--amber-glow);
+  padding: 7px 14px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: .85rem; font-weight: 600;
+  cursor: pointer;
+  transition: all var(--t-fast);
+  white-space: nowrap;
+}
+.btn-voltar:hover { background: var(--bg-card-hi); border-color: var(--border-amber); }
+
+/* =========================================================
+   SELEÇÃO DE TIPO DE LANÇAMENTO
+   ========================================================= */
+.tipo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+.tipo-btn {
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 32px 16px;
+  cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  transition: all var(--t-mid);
+  color: var(--text-primary);
+  font-family: 'Space Grotesk', sans-serif;
+}
+.tipo-btn:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+.tipo-btn:active { transform: scale(.97); }
+.tipo-icon { font-size: 2.8rem; }
+.tipo-nome { font-size: 1.15rem; font-weight: 700; }
+.tipo-desc { font-size: .78rem; color: var(--text-secondary); text-align: center; line-height: 1.5; }
+
+.tipo-receita:hover { border-color: var(--green-bright); box-shadow: 0 0 20px rgba(0,204,102,.15); }
+.tipo-despesa:hover { border-color: var(--red-bright);   box-shadow: 0 0 20px rgba(255,68,85,.15); }
+
+/* =========================================================
+   FORMULÁRIOS (Receita e Despesa)
+   ========================================================= */
+.fc-form { display: flex; flex-direction: column; gap: 18px; }
+
+.form-group { display: flex; flex-direction: column; gap: 8px; }
+
+.form-label { font-size: .85rem; font-weight: 600; color: var(--text-secondary); }
+
+/* Estilo base para inputs, selects e campos de data */
+.form-input {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  color: var(--text-primary);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: .95rem;
+  padding: 12px 14px;
+  width: 100%;
+  transition: all var(--t-fast);
+  outline: none;
+}
+/* Quando o input está em foco (ativo), borda âmbar aparece */
+.form-input:focus {
+  border-color: var(--amber-bright);
+  box-shadow: 0 0 0 2px rgba(255,140,0,.15);
+  background: var(--bg-card-hi);
+}
+/* Inputs de data precisam de color-scheme: dark para o calendário ser escuro */
+.form-input[type="date"],
+.form-input[type="month"] { color-scheme: dark; }
+
+.form-select { cursor: pointer; appearance: none; }
+.form-select option { background: var(--bg-card); }
+
+/* Linha com input e botão "Hoje" lado a lado */
+.input-row { display: flex; gap: 8px; }
+.input-row .form-input { flex: 1; }
+
+/* Botão que preenche a data automaticamente com hoje */
+.btn-hoje {
+  background: rgba(255,140,0,.12);
+  border: 1px solid var(--border-amber);
+  border-radius: var(--r-md);
+  color: var(--amber-glow);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: .82rem; font-weight: 600;
+  padding: 0 14px;
+  cursor: pointer; white-space: nowrap;
+  transition: all var(--t-fast);
+}
+.btn-hoje:hover { background: rgba(255,140,0,.22); }
+
+/* Grupo de botões de seleção (radio buttons) */
+.radio-group { display: flex; gap: 14px; flex-wrap: wrap; }
+
+.radio-label {
+  display: flex; align-items: center; gap: 8px;
+  cursor: pointer; font-size: .9rem;
+  color: var(--text-primary); user-select: none;
+}
+/* Esconde o radio button nativo do navegador */
+.radio-label input[type="radio"] { display: none; }
+
+/* Círculo visual do radio button, feito com CSS puro */
+.radio-custom {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid var(--border-amber);
+  background: var(--bg-card);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: all var(--t-fast);
+}
+/* Quando marcado: preenchido com âmbar */
+.radio-label input[type="radio"]:checked + .radio-custom {
+  background: var(--amber-bright);
+  border-color: var(--amber-bright);
+  box-shadow: 0 0 8px rgba(255,140,0,.5);
+}
+.radio-label input[type="radio"]:checked + .radio-custom::after {
+  content: ''; width: 6px; height: 6px;
+  border-radius: 50%; background: #000;
+}
+
+/* Botão principal de ação (Salvar) */
+.btn-salvar {
+  background: var(--amber-bright);
+  border: none; border-radius: var(--r-lg);
+  color: #000; font-family: 'Space Grotesk', sans-serif;
+  font-size: 1rem; font-weight: 700;
+  padding: 14px; cursor: pointer;
+  transition: all var(--t-fast);
+  margin-top: 6px; letter-spacing: .02em;
+  box-shadow: 0 4px 0 var(--amber-dim), 0 0 20px rgba(255,140,0,.25);
+  width: 100%;
+}
+.btn-salvar:hover {
+  background: var(--amber-glow);
+  box-shadow: 0 4px 0 var(--amber-mid), 0 0 30px rgba(255,140,0,.4);
+  transform: translateY(-1px);
+}
+.btn-salvar:active { transform: translateY(1px); box-shadow: none; }
+
+/* Variação verde (para salvar receita / confirmar) */
+.btn-verde {
+  background: var(--green-bright);
+  box-shadow: 0 4px 0 var(--green-dim), 0 0 20px rgba(0,204,102,.25);
+  color: #000;
+}
+.btn-verde:hover { background: #00ee77; }
+
+/* Variação vermelha (para salvar despesa) */
+.btn-vermelho {
+  background: var(--red-bright);
+  box-shadow: 0 4px 0 var(--red-dim), 0 0 20px rgba(255,68,85,.25);
+  color: #fff;
+}
+.btn-vermelho:hover { background: #ff6677; }
+
+/* Tela pós-cadastro: dois botões empilhados */
+.pos-cadastro-btns {
+  display: flex; flex-direction: column; gap: 12px;
+  width: 100%; max-width: 300px; margin-top: 16px;
+}
+
+/* =========================================================
+   CARDS DE INFORMAÇÃO (Saldo, Dívidas, etc.)
+   ========================================================= */
+.info-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 18px 20px; margin-bottom: 12px;
+}
+.info-card-titulo {
+  font-size: .75rem; letter-spacing: .1em;
+  color: var(--text-muted); text-transform: uppercase;
+  margin-bottom: 6px; font-family: 'Share Tech Mono', monospace;
+}
+.info-card-valor {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 2rem; font-weight: 700;
+}
+.info-card-detalhe { font-size: .82rem; color: var(--text-secondary); margin-top: 6px; }
+
+/* Classes utilitárias de cor de valor */
+.valor-positivo { color: var(--green-bright); }
+.valor-negativo { color: var(--red-bright); }
+.valor-amber    { color: var(--amber-bright); }
+.valor-azul     { color: var(--blue-bright); }
+
+/* Título de seção dentro das views */
+.secao-titulo {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .7rem; letter-spacing: .18em;
+  color: var(--text-muted); text-transform: uppercase;
+  padding: 14px 0 8px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 10px;
+}
+
+/* =========================================================
+   LISTA DE LANÇAMENTOS (Receitas e Despesas)
+   ========================================================= */
+.lancamento-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 12px 16px; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 12px;
+  transition: all var(--t-fast);
+}
+.lancamento-item:hover { background: var(--bg-card-hi); }
+
+.lancamento-icon  { font-size: 1.4rem; flex-shrink: 0; }
+.lancamento-info  { flex: 1; min-width: 0; }
+.lancamento-desc  {
+  font-size: .9rem; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.lancamento-meta  { font-size: .75rem; color: var(--text-secondary); margin-top: 2px; }
+.lancamento-valor {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 1rem; font-weight: 700; flex-shrink: 0;
+}
+
+/* Badges de status (Pago / Pendente / Dívida) */
+.badge-status {
+  font-size: .65rem; font-weight: 700; letter-spacing: .06em;
+  padding: 2px 8px; border-radius: 999px; flex-shrink: 0;
+}
+.badge-pago     { background: rgba(0,204,102,.15); color: var(--green-bright); }
+.badge-pendente { background: rgba(255,140,0,.15);  color: var(--amber-glow); }
+.badge-divida   { background: rgba(255,68,85,.15);  color: var(--red-bright); }
+
+/* =========================================================
+   RELATÓRIO MENSAL — Cards de cada mês
+   ========================================================= */
+.mes-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 16px 20px; margin-bottom: 10px;
+  cursor: pointer;
+  transition: all var(--t-fast);
+}
+.mes-card:hover {
+  background: var(--bg-card-hi);
+  border-color: var(--border-amber);
+  transform: translateX(4px);
+}
+.mes-card-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 8px;
+}
+.mes-card-nome {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.2rem; font-weight: 700; color: var(--amber-glow);
+}
+.mes-card-saldo {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 1.1rem; font-weight: 700;
+}
+.mes-card-stats { display: flex; gap: 16px; font-size: .8rem; color: var(--text-secondary); }
+
+/* Pílulas de percentual por categoria */
+.categorias-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.cat-pill {
+  font-size: .68rem; padding: 2px 8px; border-radius: 999px;
+  background: rgba(255,140,0,.1);
+  border: 1px solid rgba(255,140,0,.2);
+  color: var(--amber-glow);
+}
+
+/* =========================================================
+   ESTADO VAZIO (quando não há dados para mostrar)
+   ========================================================= */
+.estado-vazio { text-align: center; padding: 48px 20px; }
+.estado-vazio-icon { font-size: 3rem; margin-bottom: 12px; }
+.estado-vazio-msg  { font-size: 1rem; color: var(--text-secondary); }
+.estado-vazio-sub  { font-size: .82rem; color: var(--text-muted); margin-top: 6px; }
+
+/* =========================================================
+   TOAST (Notificação flutuante de feedback)
+   Aparece na parte inferior da tela por alguns segundos.
+   ========================================================= */
+.toast {
+  position: fixed; bottom: 28px; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--bg-card);
+  border: 1px solid var(--border-amber);
+  border-radius: var(--r-lg);
+  padding: 10px 22px;
+  font-size: .85rem; color: var(--amber-glow);
+  font-family: 'Share Tech Mono', monospace;
+  letter-spacing: .05em;
+  box-shadow: var(--shadow-md), var(--shadow-amber);
+  z-index: 1000; opacity: 0; pointer-events: none;
+  transition: all 350ms cubic-bezier(.34,1.56,.64,1);
+}
+/* Quando o JS adiciona a classe "show", o toast sobe e aparece */
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* =========================================================
+   RESPONSIVIDADE (adaptação para celulares)
+   ========================================================= */
+@media (max-width: 600px) {
+  .dash-cards { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .menu-grid  { grid-template-columns: 1fr 1fr; }
+  .tipo-grid  { grid-template-columns: 1fr; }
+  .dash-card-valor { font-size: 1rem; }
+  .info-card-valor { font-size: 1.5rem; }
+}
+
+@media (max-width: 400px) {
+  .menu-grid { grid-template-columns: 1fr; }
+  .radio-group { flex-direction: column; gap: 8px; }
+}
