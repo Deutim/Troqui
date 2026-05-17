@@ -29,7 +29,7 @@ NOTA: debug=True faz o servidor RECARREGAR AUTOMATICAMENTE
 # request: acessa dados enviados pelo navegador (formulários, URLs)
 # redirect/url_for: redireciona o usuário para outra página
 # flash: mostra mensagens temporárias (feedback ao usuário)
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, Response
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -38,6 +38,10 @@ from datetime import datetime, date
 
 # os: permite ler variáveis de ambiente (SECRET_KEY em produção)
 import os
+
+# csv e io: para ler e processar arquivos CSV enviados pelo usuário
+import csv
+import io
 
 # Importa nossas funções do banco de dados (database.py)
 import database as db
@@ -701,6 +705,291 @@ def excluir_fixa(id):
         db.deletar_fixa(id, current_user.id)
         flash(f'🗑️ Despesa Fixa "{fixa["descricao"]}" excluída!', 'aviso')
     return redirect(url_for('fixas'))
+
+
+# ─── IMPORTAÇÃO CSV ───
+
+# Categorias válidas para despesas (usadas na validação do CSV)
+CATEGORIAS_VALIDAS = ['Moradia', 'Alimentação', 'Transporte', 'Saúde',
+                      'Educação', 'Lazer', 'Investimentos', 'Dívidas']
+
+
+def normalizar_data(data_str):
+    """
+    Converte diferentes formatos de data para o formato ISO (YYYY-MM-DD).
+    Aceita: DD/MM/YYYY, DD-MM-YYYY, DD/MM/YY, YYYY-MM-DD
+    """
+    if not data_str:
+        return None
+    data_str = data_str.strip()
+    formatos = ['%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y', '%d/%m/%y']
+    for fmt in formatos:
+        try:
+            dt = datetime.strptime(data_str, fmt)
+            return dt.strftime('%Y-%m-%d')
+        except ValueError:
+            continue
+    return None  # Data inválida
+
+
+def processar_csv(conteudo_texto):
+    """
+    Processa o conteúdo de um arquivo CSV e retorna as linhas válidas e os erros.
+    Suporta dois formatos:
+      - Formato Troqui: tipo,data,descricao,valor,categoria,status
+      - Formato Simplificado (extrato): data,descricao,valor
+
+    Retorna: (linhas_validas, erros)
+      linhas_validas = lista de dicts prontos para db.inserir()
+      erros = lista de dicts com {linha, campo, mensagem}
+    """
+    linhas_validas = []
+    erros = []
+
+    # Detecta o delimitador (vírgula ou ponto-e-vírgula)
+    try:
+        dialeto = csv.Sniffer().sniff(conteudo_texto[:2000], delimiters=',;\t')
+        delimitador = dialeto.delimiter
+    except csv.Error:
+        delimitador = ','
+
+    leitor = csv.DictReader(io.StringIO(conteudo_texto), delimiter=delimitador)
+
+    # Normaliza os nomes das colunas (remove espaços, acentos, lowercase)
+    if leitor.fieldnames:
+        leitor.fieldnames = [c.strip().lower() for c in leitor.fieldnames]
+
+    # Detecta o formato baseado nas colunas
+    colunas = set(leitor.fieldnames or [])
+    formato_troqui = 'tipo' in colunas
+    formato_simplificado = not formato_troqui and ('data' in colunas or 'date' in colunas)
+
+    if not formato_troqui and not formato_simplificado:
+        erros.append({
+            'linha': 1,
+            'campo': 'cabeçalho',
+            'mensagem': 'Formato CSV não reconhecido. Use as colunas: tipo,data,descricao,valor,categoria,status'
+        })
+        return [], erros
+
+    for i, row in enumerate(leitor, start=2):
+        # Limpa espaços dos valores
+        row = {k: (v.strip() if v else '') for k, v in row.items()}
+        erro_na_linha = False
+
+        # ── Extrai e normaliza cada campo ──
+
+        # Data
+        data_raw = row.get('data', '') or row.get('date', '')
+        data_iso = normalizar_data(data_raw)
+        if not data_iso:
+            erros.append({'linha': i, 'campo': 'data', 'mensagem': f'Data inválida: "{data_raw}"'})
+            erro_na_linha = True
+
+        # Descrição
+        descricao = row.get('descricao', '') or row.get('descrição', '') or row.get('description', '')
+        if not descricao:
+            erros.append({'linha': i, 'campo': 'descricao', 'mensagem': 'Descrição vazia'})
+            erro_na_linha = True
+
+        # Valor — detecta formato inteligentemente
+        # Aceita: "1500.00" (US), "1.500,00" (BR), "1500,00" (BR sem milhar), "1,500.00" (US c/ milhar)
+        valor_str = row.get('valor', '') or row.get('value', '')
+        try:
+            vs = valor_str.strip()
+            has_dot = '.' in vs
+            has_comma = ',' in vs
+
+            if has_dot and has_comma:
+                # Ambos presentes: o ÚLTIMO separador é o decimal
+                if vs.rfind(',') > vs.rfind('.'):
+                    # BR: "1.500,00" → vírgula é decimal
+                    vs = vs.replace('.', '').replace(',', '.')
+                else:
+                    # US: "1,500.00" → ponto é decimal
+                    vs = vs.replace(',', '')
+            elif has_comma:
+                # Só vírgula: é separador decimal ("1500,00")
+                vs = vs.replace(',', '.')
+            # Se só tem ponto ou nenhum, mantém como está (formato US ou inteiro)
+
+            valor = float(vs)
+        except (ValueError, TypeError):
+            erros.append({'linha': i, 'campo': 'valor', 'mensagem': f'Valor inválido: "{valor_str}"'})
+            erro_na_linha = True
+            valor = 0
+
+        if formato_troqui:
+            # Formato completo: tipo,data,descricao,valor,categoria,status
+            tipo = row.get('tipo', '').lower()
+            if tipo not in ('receita', 'despesa'):
+                erros.append({'linha': i, 'campo': 'tipo', 'mensagem': f'Tipo inválido: "{tipo}". Use "receita" ou "despesa"'})
+                erro_na_linha = True
+
+            categoria = row.get('categoria', '')
+            if tipo == 'despesa' and categoria and categoria not in CATEGORIAS_VALIDAS:
+                erros.append({'linha': i, 'campo': 'categoria',
+                              'mensagem': f'Categoria "{categoria}" não reconhecida. Válidas: {", ".join(CATEGORIAS_VALIDAS)}'})
+                erro_na_linha = True
+
+            status = row.get('status', 'pendente').lower()
+            if status not in ('pago', 'pendente'):
+                status = 'pendente'
+
+        else:
+            # Formato simplificado: detecta tipo pelo sinal do valor
+            if valor < 0:
+                tipo = 'despesa'
+                valor = abs(valor)
+                status = 'pago'
+            else:
+                tipo = 'receita'
+                status = 'pago'
+            categoria = ''
+
+        if not erro_na_linha:
+            dados = {
+                'tipo': tipo,
+                'data': data_iso,
+                'mesAno': data_iso[:7] if data_iso else '',
+                'descricao': descricao,
+                'valor': round(abs(valor), 2),
+                'categoria': categoria if categoria else None,
+                'status': status,
+                'dataPrevista': None
+            }
+            linhas_validas.append(dados)
+
+    return linhas_validas, erros
+
+
+@app.route('/importar-csv', methods=['GET', 'POST'])
+@login_required
+def importar_csv():
+    """
+    PÁGINA: Importar CSV
+
+    GET  → Mostra a tela de upload com drag & drop
+    POST → Processa o CSV, insere as transações válidas no banco
+    """
+    if request.method == 'POST':
+        arquivo = request.files.get('arquivo_csv')
+
+        if not arquivo or not arquivo.filename:
+            flash('⚠️ Nenhum arquivo selecionado.', 'erro')
+            return redirect(url_for('importar_csv'))
+
+        if not arquivo.filename.lower().endswith('.csv'):
+            flash('⚠️ Envie um arquivo com extensão .csv', 'erro')
+            return redirect(url_for('importar_csv'))
+
+        # Lê o conteúdo do arquivo
+        try:
+            conteudo_bytes = arquivo.read()
+            # Tenta UTF-8 com BOM (padrão do Excel), depois Latin-1
+            try:
+                conteudo = conteudo_bytes.decode('utf-8-sig')
+            except UnicodeDecodeError:
+                conteudo = conteudo_bytes.decode('latin-1')
+        except Exception:
+            flash('⚠️ Erro ao ler o arquivo. Verifique o formato.', 'erro')
+            return redirect(url_for('importar_csv'))
+
+        # Limita tamanho (2MB)
+        if len(conteudo_bytes) > 2 * 1024 * 1024:
+            flash('⚠️ Arquivo muito grande. Máximo: 2 MB.', 'erro')
+            return redirect(url_for('importar_csv'))
+
+        # Processa o CSV
+        linhas_validas, erros_csv = processar_csv(conteudo)
+
+        if not linhas_validas and erros_csv:
+            for e in erros_csv[:5]:  # Mostra até 5 erros
+                flash(f'❌ Linha {e["linha"]}: {e["mensagem"]}', 'erro')
+            return redirect(url_for('importar_csv'))
+
+        # Insere todas as transações válidas no banco
+        contador = 0
+        for dados in linhas_validas:
+            db.inserir(dados, current_user.id)
+            contador += 1
+
+        flash(f'✅ {contador} transações importadas com sucesso!', 'sucesso')
+        if erros_csv:
+            flash(f'⚠️ {len(erros_csv)} linhas ignoradas por conter erros.', 'aviso')
+
+        return redirect(url_for('dashboard'))
+
+    return render_template('importar_csv.html')
+
+
+@app.route('/importar-csv/preview', methods=['POST'])
+@login_required
+def preview_csv():
+    """
+    ENDPOINT AJAX: Recebe o CSV e retorna um JSON com as linhas válidas
+    e os erros, sem inserir no banco. Usado para mostrar o preview
+    na tela antes de confirmar a importação.
+    """
+    arquivo = request.files.get('arquivo_csv')
+
+    if not arquivo or not arquivo.filename:
+        return jsonify({'erro': 'Nenhum arquivo enviado'}), 400
+
+    try:
+        conteudo_bytes = arquivo.read()
+        try:
+            conteudo = conteudo_bytes.decode('utf-8-sig')
+        except UnicodeDecodeError:
+            conteudo = conteudo_bytes.decode('latin-1')
+    except Exception:
+        return jsonify({'erro': 'Erro ao ler o arquivo'}), 400
+
+    linhas_validas, erros_csv = processar_csv(conteudo)
+
+    # Formata para exibição
+    preview_linhas = []
+    for d in linhas_validas:
+        preview_linhas.append({
+            'tipo': d['tipo'],
+            'data': formatar_data(d['data']),
+            'data_iso': d['data'],
+            'descricao': d['descricao'],
+            'valor': d['valor'],
+            'valor_fmt': formatar_dinheiro(d['valor']),
+            'categoria': d['categoria'] or '—',
+            'status': d['status']
+        })
+
+    return jsonify({
+        'validas': preview_linhas,
+        'erros': erros_csv,
+        'total_validas': len(preview_linhas),
+        'total_erros': len(erros_csv)
+    })
+
+
+@app.route('/download-modelo-csv')
+@login_required
+def download_modelo_csv():
+    """
+    Gera e retorna um arquivo CSV modelo para o usuário baixar.
+    O modelo contém exemplos de como preencher cada coluna.
+    """
+    modelo = """tipo,data,descricao,valor,categoria,status
+receita,2026-05-05,Salário,3500.00,,pago
+receita,2026-05-15,Freelance,800.00,,pendente
+despesa,2026-05-01,Aluguel,1500.00,Moradia,pago
+despesa,2026-05-03,Supermercado,450.00,Alimentação,pago
+despesa,2026-05-10,Uber,35.50,Transporte,pendente
+despesa,2026-05-12,Farmácia,89.90,Saúde,pago
+despesa,2026-05-20,Netflix,55.90,Lazer,pendente"""
+
+    return Response(
+        modelo,
+        mimetype='text/csv',
+        headers={'Content-Disposition': 'attachment; filename=modelo_troqui.csv'}
+    )
 
 
 # ═══════════════════════════════════════════════════════

@@ -1,0 +1,273 @@
+{% extends 'base.html' %}
+{% block titulo %}Importar CSV{% endblock %}
+
+{% block conteudo %}
+<div class="fc-page">
+    <div class="page-header">
+        <a href="{{ url_for('dashboard') }}" class="btn-voltar">← Voltar</a>
+        <h2 class="page-titulo">📄 Importar CSV</h2>
+    </div>
+
+    <!-- ═══ ETAPA 1: UPLOAD ═══ -->
+    <div id="etapa-upload">
+        <p class="page-subtitulo">
+            Envie um arquivo <strong>.csv</strong> com seus lançamentos e o Gordi cadastra tudo automaticamente! 🐘
+        </p>
+
+        <!-- Zona de Drag & Drop -->
+        <div class="csv-dropzone" id="dropzone">
+            <div class="dropzone-content">
+                <span class="dropzone-icon">📁</span>
+                <span class="dropzone-texto">Arraste seu arquivo CSV aqui</span>
+                <span class="dropzone-ou">ou</span>
+                <label for="inputCSV" class="dropzone-btn">Selecionar Arquivo</label>
+                <input type="file" id="inputCSV" accept=".csv" style="display: none;">
+                <span class="dropzone-hint" id="nomeArquivo">Formatos aceitos: .csv (até 2MB)</span>
+            </div>
+        </div>
+
+        <!-- Link para baixar o modelo -->
+        <div class="csv-modelo-box">
+            <span class="csv-modelo-icon">📋</span>
+            <div class="csv-modelo-info">
+                <strong>Não sabe o formato?</strong>
+                <span>Baixe o modelo pronto e preencha com seus dados.</span>
+            </div>
+            <a href="{{ url_for('download_modelo_csv') }}" class="csv-modelo-btn">⬇ Baixar Modelo</a>
+        </div>
+
+        <!-- Dicas de formato -->
+        <div class="csv-dicas">
+            <h3 class="csv-dicas-titulo">💡 Formatos aceitos</h3>
+            <div class="csv-dica-cards">
+                <div class="csv-dica-card">
+                    <div class="csv-dica-nome">Formato Troqui</div>
+                    <div class="csv-dica-desc">tipo, data, descricao, valor, categoria, status</div>
+                    <div class="csv-dica-tag tag-completo">Completo</div>
+                </div>
+                <div class="csv-dica-card">
+                    <div class="csv-dica-nome">Extrato Bancário</div>
+                    <div class="csv-dica-desc">data, descricao, valor (negativo = despesa)</div>
+                    <div class="csv-dica-tag tag-simples">Simplificado</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ ETAPA 2: LOADING ═══ -->
+    <div id="etapa-loading" class="hidden" style="text-align: center; padding: 60px 20px;">
+        <div class="csv-spinner"></div>
+        <p style="color: var(--gold-glow); margin-top: 20px; font-weight: 600;">O Gordi está analisando o arquivo...</p>
+    </div>
+
+    <!-- ═══ ETAPA 3: PREVIEW ═══ -->
+    <div id="etapa-preview" class="hidden">
+        <!-- Resumo -->
+        <div class="csv-resumo">
+            <div class="csv-resumo-item csv-resumo-ok">
+                <span class="csv-resumo-icon">✅</span>
+                <span class="csv-resumo-num" id="qtdValidas">0</span>
+                <span class="csv-resumo-label">válidas</span>
+            </div>
+            <div class="csv-resumo-item csv-resumo-erro">
+                <span class="csv-resumo-icon">⚠️</span>
+                <span class="csv-resumo-num" id="qtdErros">0</span>
+                <span class="csv-resumo-label">com erro</span>
+            </div>
+        </div>
+
+        <!-- Tabela de Preview -->
+        <div class="csv-tabela-wrap">
+            <table class="csv-tabela" id="tabelaPreview">
+                <thead>
+                    <tr>
+                        <th>Tipo</th>
+                        <th>Data</th>
+                        <th>Descrição</th>
+                        <th>Valor</th>
+                        <th>Categoria</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="corpoTabela">
+                    <!-- Preenchido pelo JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Erros (se houver) -->
+        <div id="listaErros" class="hidden">
+            <h3 class="csv-erros-titulo">⚠️ Linhas com problema</h3>
+            <div id="errosContainer"></div>
+        </div>
+
+        <!-- Botões de ação -->
+        <div class="csv-acoes">
+            <form method="POST" enctype="multipart/form-data" id="formConfirmar">
+                <input type="file" name="arquivo_csv" id="inputConfirmar" style="display: none;">
+                <button type="submit" class="btn-salvar btn-verde" id="btnConfirmar">
+                    ✅ Confirmar Importação (<span id="qtdConfirmar">0</span> lançamentos)
+                </button>
+            </form>
+            <button type="button" class="btn-salvar" id="btnCancelar" style="background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border); box-shadow: none;">
+                ← Escolher outro arquivo
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ═══ REFERÊNCIAS AOS ELEMENTOS ═══
+const dropzone = document.getElementById('dropzone');
+const inputCSV = document.getElementById('inputCSV');
+const nomeArquivo = document.getElementById('nomeArquivo');
+
+const etapaUpload = document.getElementById('etapa-upload');
+const etapaLoading = document.getElementById('etapa-loading');
+const etapaPreview = document.getElementById('etapa-preview');
+
+const qtdValidas = document.getElementById('qtdValidas');
+const qtdErros = document.getElementById('qtdErros');
+const qtdConfirmar = document.getElementById('qtdConfirmar');
+const corpoTabela = document.getElementById('corpoTabela');
+const listaErros = document.getElementById('listaErros');
+const errosContainer = document.getElementById('errosContainer');
+const inputConfirmar = document.getElementById('inputConfirmar');
+const btnCancelar = document.getElementById('btnCancelar');
+
+// Guarda o arquivo selecionado
+let arquivoAtual = null;
+
+// ═══ DRAG & DROP ═══
+dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.classList.add('dragover');
+});
+
+dropzone.addEventListener('dragleave', () => {
+    dropzone.classList.remove('dragover');
+});
+
+dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+    const files = e.dataTransfer.files;
+    if (files.length > 0 && files[0].name.toLowerCase().endsWith('.csv')) {
+        arquivoAtual = files[0];
+        processarArquivo(arquivoAtual);
+    } else {
+        nomeArquivo.textContent = '❌ Envie um arquivo .csv';
+        nomeArquivo.style.color = 'var(--red-bright)';
+    }
+});
+
+// ═══ SELEÇÃO POR BOTÃO ═══
+inputCSV.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+        arquivoAtual = e.target.files[0];
+        processarArquivo(arquivoAtual);
+    }
+});
+
+// ═══ PROCESSAMENTO (Preview via AJAX) ═══
+function processarArquivo(arquivo) {
+    // Mostra loading
+    etapaUpload.classList.add('hidden');
+    etapaLoading.classList.remove('hidden');
+    etapaPreview.classList.add('hidden');
+
+    // Envia para o endpoint de preview
+    const formData = new FormData();
+    formData.append('arquivo_csv', arquivo);
+
+    fetch('{{ url_for("preview_csv") }}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(resp => resp.json())
+    .then(data => {
+        etapaLoading.classList.add('hidden');
+
+        if (data.erro) {
+            alert(data.erro);
+            voltarUpload();
+            return;
+        }
+
+        montarPreview(data);
+        etapaPreview.classList.remove('hidden');
+    })
+    .catch(err => {
+        etapaLoading.classList.add('hidden');
+        alert('Erro ao processar o arquivo. Verifique o formato.');
+        voltarUpload();
+    });
+}
+
+// ═══ MONTAR PREVIEW ═══
+function montarPreview(data) {
+    // Atualiza contadores
+    qtdValidas.textContent = data.total_validas;
+    qtdErros.textContent = data.total_erros;
+    qtdConfirmar.textContent = data.total_validas;
+
+    // Limpa tabela
+    corpoTabela.innerHTML = '';
+
+    // Preenche a tabela com as linhas válidas
+    data.validas.forEach(linha => {
+        const tr = document.createElement('tr');
+        const tipoClass = linha.tipo === 'receita' ? 'valor-positivo' : 'valor-negativo';
+        const tipoIcon = linha.tipo === 'receita' ? '📈' : '📉';
+        const statusBadge = linha.status === 'pago'
+            ? '<span class="badge-status badge-pago">Pago</span>'
+            : '<span class="badge-status badge-pendente">Pendente</span>';
+
+        tr.innerHTML = `
+            <td data-label="Tipo"><span class="${tipoClass}">${tipoIcon} ${linha.tipo}</span></td>
+            <td data-label="Data">${linha.data}</td>
+            <td data-label="Descrição">${linha.descricao}</td>
+            <td data-label="Valor" class="${tipoClass}" style="font-family: 'Share Tech Mono', monospace; font-weight: 700;">${linha.valor_fmt}</td>
+            <td data-label="Categoria">${linha.categoria}</td>
+            <td data-label="Status">${statusBadge}</td>
+        `;
+        corpoTabela.appendChild(tr);
+    });
+
+    // Mostra erros se houver
+    if (data.total_erros > 0) {
+        listaErros.classList.remove('hidden');
+        errosContainer.innerHTML = '';
+        data.erros.forEach(e => {
+            const div = document.createElement('div');
+            div.className = 'csv-erro-item';
+            div.innerHTML = `
+                <span class="csv-erro-linha">Linha ${e.linha}</span>
+                <span class="csv-erro-msg">${e.mensagem}</span>
+            `;
+            errosContainer.appendChild(div);
+        });
+    } else {
+        listaErros.classList.add('hidden');
+    }
+
+    // Prepara o formulário de confirmação com o arquivo
+    // Criamos um novo DataTransfer para injetar o arquivo no input
+    const dt = new DataTransfer();
+    dt.items.add(arquivoAtual);
+    inputConfirmar.files = dt.files;
+}
+
+// ═══ VOLTAR PARA UPLOAD ═══
+function voltarUpload() {
+    etapaUpload.classList.remove('hidden');
+    etapaLoading.classList.add('hidden');
+    etapaPreview.classList.add('hidden');
+    inputCSV.value = '';
+    nomeArquivo.textContent = 'Formatos aceitos: .csv (até 2MB)';
+    nomeArquivo.style.color = '';
+}
+
+btnCancelar.addEventListener('click', voltarUpload);
+</script>
+{% endblock %}

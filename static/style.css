@@ -799,3 +799,271 @@ body {
   }
 }
 
+/* =========================================================
+   IMPORTAÇÃO CSV — Dropzone, Preview, Erros
+   ========================================================= */
+
+/* Botão CSV na tela de tipo de lançamento */
+.tipo-csv { border-color: rgba(10,132,255,.3) !important; }
+.tipo-csv:hover {
+  border-color: var(--blue-bright) !important;
+  box-shadow: 0 0 20px rgba(10,132,255,.15) !important;
+}
+
+/* ── Zona de Drag & Drop ── */
+.csv-dropzone {
+  background: var(--bg-card); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border: 2px dashed var(--border-gold);
+  border-radius: var(--r-xl);
+  padding: 48px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--t-mid);
+  margin-bottom: 20px;
+}
+.csv-dropzone:hover,
+.csv-dropzone.dragover {
+  border-color: var(--gold-bright);
+  background: rgba(212,175,55,.06);
+  box-shadow: 0 0 30px rgba(212,175,55,.1);
+  transform: scale(1.01);
+}
+.dropzone-content {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.dropzone-icon { font-size: 3rem; opacity: 0.8; }
+.dropzone-texto {
+  font-size: 1.1rem; font-weight: 600; color: var(--text-primary);
+}
+.dropzone-ou {
+  font-size: .8rem; color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: .15em;
+}
+.dropzone-btn {
+  background: var(--gold-bright);
+  color: #000; font-weight: 700; font-size: .9rem;
+  padding: 10px 24px; border-radius: var(--r-md);
+  cursor: pointer; transition: all var(--t-fast);
+  box-shadow: 0 4px 0 var(--gold-dim), 0 0 16px rgba(212,175,55,.2);
+}
+.dropzone-btn:hover {
+  background: var(--gold-glow);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 0 var(--gold-mid), 0 0 24px rgba(212,175,55,.35);
+}
+.dropzone-hint {
+  font-size: .78rem; color: var(--text-muted); margin-top: 4px;
+}
+
+/* ── Box do Modelo CSV ── */
+.csv-modelo-box {
+  background: var(--bg-card); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 16px 20px;
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 24px;
+  transition: all var(--t-fast);
+}
+.csv-modelo-box:hover {
+  border-color: var(--border-gold);
+}
+.csv-modelo-icon { font-size: 1.8rem; flex-shrink: 0; }
+.csv-modelo-info {
+  flex: 1; display: flex; flex-direction: column; gap: 2px;
+}
+.csv-modelo-info strong {
+  font-size: .9rem; color: var(--text-primary);
+}
+.csv-modelo-info span {
+  font-size: .78rem; color: var(--text-secondary);
+}
+.csv-modelo-btn {
+  background: rgba(212,175,55,.12); border: 1px solid var(--border-gold);
+  border-radius: var(--r-md); color: var(--gold-glow);
+  font-weight: 600; font-size: .82rem;
+  padding: 8px 16px; white-space: nowrap;
+  text-decoration: none;
+  transition: all var(--t-fast);
+}
+.csv-modelo-btn:hover {
+  background: rgba(212,175,55,.22);
+  box-shadow: 0 0 12px rgba(212,175,55,.15);
+}
+
+/* ── Dicas de Formato ── */
+.csv-dicas { margin-bottom: 24px; }
+.csv-dicas-titulo {
+  font-size: .95rem; font-weight: 600; color: var(--text-primary);
+  margin-bottom: 12px;
+}
+.csv-dica-cards {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+@media (max-width: 500px) {
+  .csv-dica-cards { grid-template-columns: 1fr; }
+}
+.csv-dica-card {
+  background: var(--bg-card); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 14px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.csv-dica-nome {
+  font-size: .85rem; font-weight: 700; color: var(--text-primary);
+}
+.csv-dica-desc {
+  font-size: .72rem; color: var(--text-secondary); font-family: 'Share Tech Mono', monospace;
+  letter-spacing: .03em;
+}
+.csv-dica-tag {
+  font-size: .65rem; font-weight: 700; padding: 2px 8px;
+  border-radius: 999px; width: fit-content; letter-spacing: .05em;
+}
+.tag-completo {
+  background: rgba(50,215,75,.12); color: var(--green-bright);
+  border: 1px solid rgba(50,215,75,.25);
+}
+.tag-simples {
+  background: rgba(10,132,255,.12); color: var(--blue-bright);
+  border: 1px solid rgba(10,132,255,.25);
+}
+
+/* ── Spinner de Loading ── */
+.csv-spinner {
+  width: 48px; height: 48px; margin: 0 auto;
+  border: 3px solid var(--border);
+  border-top: 3px solid var(--gold-bright);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Resumo (Válidas / Erros) ── */
+.csv-resumo {
+  display: flex; gap: 12px; margin-bottom: 20px;
+}
+.csv-resumo-item {
+  flex: 1;
+  background: var(--bg-card); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  display: flex; align-items: center; gap: 10px;
+}
+.csv-resumo-ok { border-color: var(--green-border); }
+.csv-resumo-erro { border-color: var(--red-border); }
+.csv-resumo-icon { font-size: 1.4rem; }
+.csv-resumo-num {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 1.6rem; font-weight: 700;
+}
+.csv-resumo-ok .csv-resumo-num { color: var(--green-bright); }
+.csv-resumo-erro .csv-resumo-num { color: var(--red-bright); }
+.csv-resumo-label {
+  font-size: .8rem; color: var(--text-secondary);
+}
+
+/* ── Tabela de Preview ── */
+.csv-tabela-wrap {
+  overflow-x: auto; margin-bottom: 20px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border);
+}
+.csv-tabela {
+  width: 100%; border-collapse: collapse;
+  font-size: .82rem;
+}
+.csv-tabela thead {
+  background: rgba(212,175,55,.08);
+}
+.csv-tabela th {
+  padding: 10px 12px;
+  text-align: left; font-weight: 600;
+  color: var(--gold-glow);
+  font-size: .72rem; letter-spacing: .1em; text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.csv-tabela td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+}
+.csv-tabela tbody tr {
+  transition: background var(--t-fast);
+}
+.csv-tabela tbody tr:hover {
+  background: rgba(212,175,55,.04);
+}
+.csv-tabela tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* ── Erros ── */
+.csv-erros-titulo {
+  font-size: .9rem; font-weight: 600; color: var(--red-bright);
+  margin-bottom: 10px;
+}
+.csv-erro-item {
+  background: var(--bg-card); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--red-border);
+  border-radius: var(--r-md);
+  padding: 10px 14px; margin-bottom: 6px;
+  display: flex; align-items: center; gap: 12px;
+  font-size: .82rem;
+}
+.csv-erro-linha {
+  font-family: 'Share Tech Mono', monospace;
+  font-weight: 700; color: var(--red-bright);
+  white-space: nowrap;
+}
+.csv-erro-msg { color: var(--text-secondary); }
+
+/* ── Botões de Ação ── */
+.csv-acoes {
+  display: flex; flex-direction: column; gap: 10px;
+  margin-top: 20px;
+}
+
+/* ── Mobile: Responsividade CSV ── */
+@media (max-width: 600px) {
+  .csv-dropzone { padding: 36px 16px; }
+  .dropzone-texto { font-size: .95rem; }
+  .csv-modelo-box {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .csv-modelo-btn {
+    width: 100%; text-align: center;
+  }
+  .csv-resumo { flex-direction: column; gap: 8px; }
+
+  /* Transforma tabela em cards empilhados no celular */
+  .csv-tabela thead { display: none; }
+  .csv-tabela,
+  .csv-tabela tbody,
+  .csv-tabela tr,
+  .csv-tabela td {
+    display: block; width: 100%;
+  }
+  .csv-tabela tr {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: 12px;
+    margin-bottom: 8px;
+  }
+  .csv-tabela td {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 4px 0; border-bottom: none;
+    font-size: .82rem;
+  }
+  .csv-tabela td::before {
+    content: attr(data-label);
+    font-weight: 600; color: var(--text-secondary);
+    font-size: .72rem; text-transform: uppercase; letter-spacing: .05em;
+    margin-right: 10px;
+  }
+}

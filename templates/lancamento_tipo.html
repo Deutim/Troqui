@@ -20,5 +20,14 @@
             <span class="tipo-desc">Saída de dinheiro<br>Contas, compras, dívidas...</span>
         </a>
     </div>
+
+    <!-- Opção de importação em massa via CSV -->
+    <div style="margin-top: 16px;">
+        <a href="{{ url_for('importar_csv') }}" class="tipo-btn tipo-csv" style="width: 100%;">
+            <span class="tipo-icon">📄</span>
+            <span class="tipo-nome">Importar CSV</span>
+            <span class="tipo-desc">Cadastre vários lançamentos de uma vez<br>Extratos, planilhas, arquivos .csv</span>
+        </a>
+    </div>
 </div>
 {% endblock %}
