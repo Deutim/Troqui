@@ -755,21 +755,66 @@ def processar_csv(conteudo_texto):
 
     leitor = csv.DictReader(io.StringIO(conteudo_texto), delimiter=delimitador)
 
-    # Normaliza os nomes das colunas (remove espaços, acentos, lowercase)
+    # Normaliza os nomes das colunas (remove espaços extras, lowercase)
     if leitor.fieldnames:
         leitor.fieldnames = [c.strip().lower() for c in leitor.fieldnames]
 
-    # Detecta o formato baseado nas colunas
+    # ── Mapeamento flexível de colunas ──
+    # Cada banco exporta com nomes diferentes. Aqui definimos todas as variações
+    # conhecidas para encontrar as colunas certas automaticamente.
     colunas = set(leitor.fieldnames or [])
+
+    # Função auxiliar: procura a primeira coluna que bater
+    def encontrar_coluna(possiveis_nomes):
+        for nome in possiveis_nomes:
+            if nome in colunas:
+                return nome
+        return None
+
+    # Nomes possíveis para cada campo
+    col_data = encontrar_coluna([
+        'data', 'date', 'data lançamento', 'data lancamento',
+        'data do lançamento', 'data do lancamento', 'data transação',
+        'data transacao', 'data movimento', 'data pagamento',
+        'data de pagamento', 'data operação', 'data operacao',
+        'dt. movimento', 'dt movimento', 'created_at'
+    ])
+    col_descricao = encontrar_coluna([
+        'descricao', 'descrição', 'description', 'desc',
+        'lançamento', 'lancamento', 'histórico', 'historico',
+        'detalhes', 'detalhe', 'memo', 'observação', 'observacao',
+        'título', 'titulo', 'nome', 'identificação', 'identificacao',
+        'informações adicionais', 'informacoes adicionais',
+        'transação', 'transacao', 'referência', 'referencia'
+    ])
+    col_valor = encontrar_coluna([
+        'valor', 'value', 'amount', 'quantia', 'montante',
+        'valor (r$)', 'valor(r$)', 'valor r$', 'vlr',
+        'valor da transação', 'valor da transacao',
+        'valor do pagamento', 'total'
+    ])
+
     formato_troqui = 'tipo' in colunas
-    formato_simplificado = not formato_troqui and ('data' in colunas or 'date' in colunas)
+    formato_simplificado = not formato_troqui and col_data is not None
 
     if not formato_troqui and not formato_simplificado:
+        colunas_encontradas = ', '.join(colunas) if colunas else 'nenhuma'
         erros.append({
             'linha': 1,
             'campo': 'cabeçalho',
-            'mensagem': 'Formato CSV não reconhecido. Use as colunas: tipo,data,descricao,valor,categoria,status'
+            'mensagem': f'Colunas não reconhecidas: [{colunas_encontradas}]. Preciso ao menos de uma coluna de data, descrição e valor.'
         })
+        return [], erros
+
+    # Verifica se encontrou as colunas mínimas necessárias
+    if not col_data:
+        erros.append({'linha': 1, 'campo': 'cabeçalho', 'mensagem': 'Coluna de DATA não encontrada no CSV.'})
+        return [], erros
+    if not col_descricao:
+        erros.append({'linha': 1, 'campo': 'cabeçalho', 'mensagem': 'Coluna de DESCRIÇÃO não encontrada no CSV.'})
+        return [], erros
+    if not col_valor:
+        erros.append({'linha': 1, 'campo': 'cabeçalho', 'mensagem': 'Coluna de VALOR não encontrada no CSV.'})
         return [], erros
 
     for i, row in enumerate(leitor, start=2):
@@ -777,24 +822,24 @@ def processar_csv(conteudo_texto):
         row = {k: (v.strip() if v else '') for k, v in row.items()}
         erro_na_linha = False
 
-        # ── Extrai e normaliza cada campo ──
+        # ── Extrai e normaliza cada campo usando as colunas detectadas ──
 
         # Data
-        data_raw = row.get('data', '') or row.get('date', '')
+        data_raw = row.get(col_data, '')
         data_iso = normalizar_data(data_raw)
         if not data_iso:
             erros.append({'linha': i, 'campo': 'data', 'mensagem': f'Data inválida: "{data_raw}"'})
             erro_na_linha = True
 
         # Descrição
-        descricao = row.get('descricao', '') or row.get('descrição', '') or row.get('description', '')
+        descricao = row.get(col_descricao, '')
         if not descricao:
             erros.append({'linha': i, 'campo': 'descricao', 'mensagem': 'Descrição vazia'})
             erro_na_linha = True
 
         # Valor — detecta formato inteligentemente
         # Aceita: "1500.00" (US), "1.500,00" (BR), "1500,00" (BR sem milhar), "1,500.00" (US c/ milhar)
-        valor_str = row.get('valor', '') or row.get('value', '')
+        valor_str = row.get(col_valor, '')
         try:
             vs = valor_str.strip()
             has_dot = '.' in vs
