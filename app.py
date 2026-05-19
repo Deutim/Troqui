@@ -558,12 +558,14 @@ def mes_detalhe(mes_ano):
     """
     transacoes = db.buscar_por_mes(mes_ano, current_user.id)
     resumo = db.calcular_resumo_mes(mes_ano, current_user.id)
+    total_fixas = db.total_despesas_fixas(current_user.id)
 
     return render_template('mes_detalhe.html',
         mes_ano=mes_ano,
         mes_nome=nome_mes(mes_ano),
         transacoes=transacoes,
-        resumo=resumo
+        resumo=resumo,
+        total_fixas=total_fixas
     )
 
 

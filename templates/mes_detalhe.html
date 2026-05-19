@@ -24,6 +24,27 @@
         </div>
     </div>
 
+    {% if total_fixas > 0 %}
+    <div style="margin-top: 16px; padding: 16px 20px; background: linear-gradient(135deg, rgba(255,140,0,0.08) 0%, rgba(255,140,0,0.02) 100%); border: 1px solid var(--amber-bright); border-radius: var(--r-lg); position: relative; overflow: hidden;">
+        <div style="position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--amber-bright);"></div>
+        <h3 style="font-size: 0.95rem; color: var(--amber-bright); margin-bottom: 12px; font-weight: 700;">📊 Projeção Financeira</h3>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: var(--text-muted); font-size: 0.85rem;">⏳ Pendentes</span>
+                <span style="color: var(--red-bright); font-weight: 600;">{{ formatar_dinheiro(resumo.pendentes) }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: var(--text-muted); font-size: 0.85rem;">🔄 Despesas Fixas</span>
+                <span style="color: var(--blue-bright); font-weight: 600;">{{ formatar_dinheiro(total_fixas) }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 2px solid rgba(255,140,0,0.3);">
+                <span style="color: var(--text-primary); font-weight: 700;">💰 Total Comprometido</span>
+                <span style="color: var(--amber-bright); font-weight: 800; font-size: 1.2rem;">{{ formatar_dinheiro(resumo.pendentes + total_fixas) }}</span>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <div class="secao-titulo">Lançamentos</div>
 
     <form method="POST" action="{{ url_for('marcar_pagos_lote') }}" id="form-lote">
