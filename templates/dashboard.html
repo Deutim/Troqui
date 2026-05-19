@@ -59,6 +59,37 @@
     </div>
 </div>
 
+<!-- Projeção Financeira: Pendentes + Despesas Fixas -->
+{% if total_fixas > 0 %}
+<section class="info-card" style="margin-bottom: 24px; border-color: var(--amber-bright); background: linear-gradient(135deg, rgba(255,140,0,0.08) 0%, rgba(255,140,0,0.02) 100%); position: relative; overflow: hidden;">
+    <div style="position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--amber-bright); box-shadow: 0 0 12px var(--amber-bright);"></div>
+    <h3 style="font-size: 1rem; color: var(--amber-bright); margin-bottom: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+        <i class="ph ph-chart-line-up" style="font-size: 1.2rem;"></i>
+        Projeção Financeira
+    </h3>
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+            <span style="color: var(--text-muted); font-size: 0.9rem;">⏳ Pendentes a pagar</span>
+            <span style="color: var(--red-bright); font-weight: 600;">{{ formatar_dinheiro(pendentes) }}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+            <span style="color: var(--text-muted); font-size: 0.9rem;">🔄 Despesas Fixas (mensal)</span>
+            <span style="color: var(--blue-bright); font-weight: 600;">{{ formatar_dinheiro(total_fixas) }}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+            <span style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600;">📊 Total comprometido</span>
+            <span style="color: var(--amber-bright); font-weight: 700; font-size: 1.1rem;">{{ formatar_dinheiro(pendentes + total_fixas) }}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; margin-top: 4px; border-top: 2px solid rgba(255,140,0,0.3);">
+            <span style="color: var(--text-primary); font-size: 0.95rem; font-weight: 700;">💰 Saldo Projetado</span>
+            <span style="font-weight: 800; font-size: 1.3rem; {% if saldo_projetado >= 0 %}color: var(--green-bright);{% else %}color: var(--red-bright);{% endif %}">
+                {{ formatar_dinheiro(saldo_projetado) }}
+            </span>
+        </div>
+    </div>
+</section>
+{% endif %}
+
 <!-- Gráfico de Pizza das Despesas -->
 <section class="fc-chart-section info-card" style="text-align: center; margin-bottom: 30px;">
     <h3 style="font-size: 1rem; color: var(--text-primary); margin-bottom: 20px; font-weight: 600;">Distribuição de Despesas</h3>

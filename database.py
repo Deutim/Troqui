@@ -655,6 +655,22 @@ def deletar_fixa(id_fixa, usuario_id):
     conn.close()
 
 
+def total_despesas_fixas(usuario_id):
+    """
+    Retorna a soma do valor de todas as despesas fixas cadastradas pelo usuário.
+    Usado para calcular projeções financeiras no dashboard.
+    """
+    conn = sqlite3.connect(DB_PATH, timeout=15.0)
+    cursor = conn.cursor()
+    cursor.execute(
+        'SELECT SUM(valor) FROM despesas_fixas WHERE usuario_id = ?',
+        (usuario_id,)
+    )
+    total = cursor.fetchone()[0] or 0.0
+    conn.close()
+    return total
+
+
 def processar_despesas_fixas_do_mes(mes_ano, usuario_id):
     """
     Gera automaticamente os lançamentos de despesas fixas para um mês.

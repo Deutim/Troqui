@@ -256,6 +256,14 @@ def dashboard():
     # Adiciona as atrasadas ao total de pendentes
     total_pendentes = resumo['pendentes'] + total_atrasadas
 
+    # ── Projeção: pendentes + despesas fixas ──
+    # Soma o valor mensal das despesas fixas ao total de pendentes,
+    # para dar uma visão completa dos compromissos financeiros.
+    # As fixas do mês atual já estão em 'pendentes' (geradas como transações),
+    # então aqui representamos o compromisso recorrente mensal total.
+    total_fixas = db.total_despesas_fixas(current_user.id)
+    saldo_projetado = saldo_acumulado - total_pendentes - total_fixas
+
     # Buscar transações do mês para calcular as categorias
     transacoes_mes = db.buscar_por_mes(ma, current_user.id)
     categorias = {}
@@ -276,6 +284,8 @@ def dashboard():
         receitas=resumo['receitas'],
         despesas=resumo['despesas'],
         pendentes=total_pendentes,
+        total_fixas=total_fixas,
+        saldo_projetado=saldo_projetado,
         cat_labels=json.dumps(labels_grafico),
         cat_valores=json.dumps(valores_grafico)
     )
