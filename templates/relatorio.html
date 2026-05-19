@@ -39,6 +39,9 @@
                         <span class="valor-positivo">📈 {{ formatar_dinheiro(mes.receitas) }}</span>
                         <span class="valor-negativo">📉 Pagas: {{ formatar_dinheiro(mes.despesas) }}</span>
                         <span class="valor-azul">⏳ Pendentes: {{ formatar_dinheiro(mes.pendentes) }}</span>
+                        {% if total_fixas > 0 %}
+                        <span style="color: var(--amber-bright); font-weight: 600;">📊 Projeção: {{ formatar_dinheiro(mes.pendentes + total_fixas) }}</span>
+                        {% endif %}
                     </div>
                     {% if mes.categorias %}
                     <div class="categorias-bar">

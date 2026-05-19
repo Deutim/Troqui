@@ -541,7 +541,10 @@ def relatorio():
             anos_dict[ano_str] = []
         anos_dict[ano_str].append(mes)
 
-    return render_template('relatorio.html', anos=anos_dict, ma_atual=mes_atual())
+    # Total de despesas fixas para a projeção
+    total_fixas = db.total_despesas_fixas(current_user.id)
+
+    return render_template('relatorio.html', anos=anos_dict, ma_atual=mes_atual(), total_fixas=total_fixas)
 
 
 @app.route('/relatorio/<mes_ano>')
